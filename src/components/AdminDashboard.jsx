@@ -636,8 +636,8 @@ export default function AdminDashboard({ profile }) {
           {activeMenu === 'Dashboard' && renderDashboard()}
           {activeMenu === 'Timetable' && <TimetableView />}
           {activeMenu === 'Setup' && renderSetup()}
-          {activeMenu === 'Check-In' && <CheckInView attendance={attendance} />}
-          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} />}
+          {activeMenu === 'Check-In' && <CheckInView attendance={attendance} profile={profile} refreshData={fetchData} />}
+          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} profile={profile} refreshData={fetchData} />}
           {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
           {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} />}
           {activeMenu === 'Reports' && (

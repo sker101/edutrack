@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
 import { 
   CheckCircle2, Clock, AlertTriangle, UserX, FileQuestion, MapPin, Search, 
-  ChevronLeft, ChevronRight, Check, X, MoreHorizontal, FileText, Upload
+  ChevronLeft, ChevronRight, Check, X, MoreHorizontal, FileText, Upload, Calendar, BookOpen, UserCheck
 } from 'lucide-react';
 
 export const AlertsView = ({ alerts }) => (
@@ -58,17 +59,45 @@ export const AlertsView = ({ alerts }) => (
   </div>
 );
 
-export const CheckInView = ({ attendance }) => {
+export const CheckInView = ({ attendance, profile, refreshData }) => {
   const [checkingIn, setCheckingIn] = useState(false);
   const [method, setMethod] = useState('');
 
-  const handleSimulateBiometric = (type) => {
+  const handleSimulateBiometric = async (type) => {
     setMethod(type);
     setCheckingIn(true);
-    setTimeout(() => {
+    
+    // Simulate biometric delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
       setCheckingIn(false);
-      alert(`${type} Verification Successful! Checked in.`);
-    }, 2000);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase.from('attendance_logs').insert([{
+        teacher_id: profile?.id,
+        date: today,
+        location_lat: latitude,
+        location_lng: longitude
+      }]);
+      
+      setCheckingIn(false);
+      if (error) {
+        alert("Error checking in: " + error.message);
+      } else {
+        alert(`${type} Verification Successful! Checked in securely.`);
+        if (refreshData) refreshData();
+      }
+    }, (err) => {
+      alert("Error getting location. Ensure location permissions are enabled.");
+      setCheckingIn(false);
+    });
   };
 
   return (
@@ -166,15 +195,54 @@ export const CheckInView = ({ attendance }) => {
   );
 };
 
-export const LessonsView = ({ verifications }) => (
+export const LessonsView = ({ verifications, profile, refreshData }) => {
+  const [recording, setRecording] = useState(false);
+
+  const handleRecordLesson = async () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setRecording(true);
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      const today = new Date().toISOString().split('T')[0];
+      
+      const { error } = await supabase.from('lesson_verifications').insert([{
+        teacher_id: profile?.id,
+        date: today,
+        location_lat: latitude,
+        location_lng: longitude
+        // Note: timetable_id would normally be selected by the user here
+      }]);
+      
+      setRecording(false);
+      if (error) {
+        alert("Error recording lesson: " + error.message);
+      } else {
+        alert("Lesson recorded and verified successfully!");
+        if (refreshData) refreshData();
+      }
+    }, (err) => {
+      alert("Error getting location. Ensure location permissions are enabled.");
+      setRecording(false);
+    });
+  };
+
+  return (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="flex justify-between items-start">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Lesson Records</h1>
         <p className="text-sm text-slate-500 mt-1">Track and verify completed lessons</p>
       </div>
-      <button className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition">
-        Record Lesson
+      <button 
+        onClick={handleRecordLesson}
+        disabled={recording}
+        className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 disabled:bg-teal-400 text-white rounded-xl text-sm font-bold shadow-sm transition"
+      >
+        {recording ? 'Recording...' : 'Record Lesson'}
       </button>
     </div>
 
@@ -397,7 +465,7 @@ export const TeachersView = ({ teachers, attendance }) => (
                     <span className="font-semibold text-slate-900">{t.full_name || t.email}</span>
                   </div>
                 </td>
-                <td className="p-4 text-slate-600 font-medium capitalize">{t.role.replace('_', ' ')}</td>
+                <td className="p-4 text-slate-600 font-medium capitalize">{t.role ? t.role.replace('_', ' ') : 'Teacher'}</td>
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statClass}`}>
                     {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />} {isPresent ? 'Present' : (att ? att.status : 'No Data')}
