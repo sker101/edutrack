@@ -187,7 +187,7 @@ export default function AdminDashboard({ profile }) {
             <p className="text-slate-500 text-sm font-medium">Total<br/>Teachers</p>
             <div className="p-2 bg-slate-50 rounded-lg"><Users className="w-4 h-4 text-slate-400" /></div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{teachers.length > 0 ? teachers.length : 47}</p>
+          <p className="text-3xl font-bold text-slate-900">{teachers.length}</p>
           <p className="text-xs text-slate-500 mt-1">Active staff</p>
         </div>
 
@@ -197,7 +197,7 @@ export default function AdminDashboard({ profile }) {
             <div className="p-2 bg-emerald-50 rounded-lg"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></div>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'present').length || 42}</p>
+            <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'present').length}</p>
             <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+5%</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">89% attendance</p>
@@ -209,7 +209,7 @@ export default function AdminDashboard({ profile }) {
             <p className="text-slate-500 text-sm font-medium">Absent<br/>Today</p>
             <div className="p-2 bg-red-50 rounded-lg"><AlertTriangle className="w-4 h-4 text-red-500" /></div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'absent').length || 5}</p>
+          <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'absent').length}</p>
           <p className="text-xs text-slate-500 mt-1">Requires action</p>
           <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-red-50/50 to-transparent rounded-bl-full pointer-events-none"></div>
         </div>
@@ -219,7 +219,7 @@ export default function AdminDashboard({ profile }) {
             <p className="text-slate-500 text-sm font-medium">Lessons<br/>Today</p>
             <div className="p-2 bg-teal-50 rounded-lg"><BookOpen className="w-4 h-4 text-teal-600" /></div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{verifications.length || 156}</p>
+          <p className="text-3xl font-bold text-slate-900">{verifications.length}</p>
           <p className="text-xs text-slate-500 mt-1">Out of 168</p>
         </div>
 
@@ -347,7 +347,7 @@ export default function AdminDashboard({ profile }) {
                 <div className="flex items-center gap-2 mb-2 text-teal-600">
                   <BookOpen className="w-4 h-4" /> <span className="text-xs font-semibold">Classes</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{classes.length || 24}</p>
+                <p className="text-2xl font-bold text-slate-900">{classes.length}</p>
                 <p className="text-xs text-slate-500 mt-1">Active classes</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -368,7 +368,7 @@ export default function AdminDashboard({ profile }) {
                 <div className="flex items-center gap-2 mb-2 text-slate-600">
                   <GraduationCap className="w-4 h-4" /> <span className="text-xs font-semibold">Subjects</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{subjects.length || 12}</p>
+                <p className="text-2xl font-bold text-slate-900">{subjects.length}</p>
                 <p className="text-xs text-slate-500 mt-1">Being taught</p>
               </div>
             </div>
@@ -636,10 +636,10 @@ export default function AdminDashboard({ profile }) {
           {activeMenu === 'Dashboard' && renderDashboard()}
           {activeMenu === 'Timetable' && <TimetableView />}
           {activeMenu === 'Setup' && renderSetup()}
-          {activeMenu === 'Check-In' && <CheckInView />}
-          {activeMenu === 'Lessons' && <LessonsView />}
-          {activeMenu === 'Alerts' && <AlertsView />}
-          {activeMenu === 'Teachers' && <TeachersView />}
+          {activeMenu === 'Check-In' && <CheckInView attendance={attendance} />}
+          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} />}
+          {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
+          {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} />}
           {activeMenu === 'Reports' && (
             <div className="flex items-center justify-center h-[50vh] text-slate-500">
               <p>Reports section is under construction.</p>

@@ -118,7 +118,7 @@ export const AlertsView = ({ alerts }) => (
   </div>
 );
 
-export const CheckInView = () => {
+export const CheckInView = ({ attendance }) => {
   const [checkingIn, setCheckingIn] = useState(false);
   const [method, setMethod] = useState('');
 
@@ -190,36 +190,35 @@ export const CheckInView = () => {
               </span>
             </div>
             <div className="p-2 space-y-1">
-              {[
-                { name: 'Anna Mushi', time: '08:15 AM' },
-                { name: 'James Tarimo', time: '08:12 AM' },
-                { name: 'Sarah Kimaro', time: '08:08 AM' },
-                { name: 'David Mwakesege', time: '08:05 AM' },
-              ].map((person, i) => (
-                <div key={i} className="flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center">
-                      <UserCheck className="w-5 h-5" />
+              {attendance && attendance.length > 0 ? (
+                attendance.slice(0, 5).map((person, i) => (
+                  <div key={i} className="flex justify-between items-center p-4 hover:bg-slate-50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-sm">
+                        {person.profiles?.full_name ? person.profiles.full_name.substring(0,2).toUpperCase() : <UserCheck className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{person.profiles?.full_name || 'Unknown'}</p>
+                        <p className="text-xs text-slate-500">via location</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-slate-900">{person.name}</p>
-                      <p className="text-xs text-slate-500">via location</p>
+                    <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                      <CheckCircle2 className="w-4 h-4" /> {new Date(person.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
-                    <CheckCircle2 className="w-4 h-4" /> {person.time}
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="p-4 text-center text-slate-500 text-sm">No check-ins today.</div>
+              )}
             </div>
           </div>
           
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-emerald-800">42 Teachers Checked In</h3>
+              <h3 className="font-bold text-emerald-800">{attendance ? attendance.filter(a => a.status === 'present').length : 0} Teachers Checked In</h3>
             </div>
-            <p className="text-sm text-emerald-700">89% of expected staff present • 5 pending arrivals</p>
+            <p className="text-sm text-emerald-700">Today's verified arrivals</p>
           </div>
         </div>
       </div>
@@ -227,7 +226,7 @@ export const CheckInView = () => {
   );
 };
 
-export const LessonsView = () => (
+export const LessonsView = ({ verifications }) => (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="flex justify-between items-start">
       <div>
@@ -242,28 +241,28 @@ export const LessonsView = () => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center">
         <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-slate-900">8</p>
+          <p className="text-3xl font-bold text-slate-900">{verifications ? verifications.length : 0}</p>
           <BookOpen className="w-5 h-5 text-slate-400" />
         </div>
         <p className="text-sm font-medium text-slate-500">Total</p>
       </div>
       <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
         <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-emerald-600">4</p>
+          <p className="text-3xl font-bold text-emerald-600">{verifications ? verifications.length : 0}</p>
           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
         </div>
         <p className="text-sm font-medium text-emerald-700">Verified</p>
       </div>
       <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 flex flex-col justify-center">
         <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-orange-600">2</p>
+          <p className="text-3xl font-bold text-orange-600">0</p>
           <Clock className="w-5 h-5 text-orange-500" />
         </div>
         <p className="text-sm font-medium text-orange-700">Pending</p>
       </div>
       <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
         <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-red-600">2</p>
+          <p className="text-3xl font-bold text-red-600">0</p>
           <AlertTriangle className="w-5 h-5 text-red-500" />
         </div>
         <p className="text-sm font-medium text-red-700">Flagged</p>
@@ -285,34 +284,32 @@ export const LessonsView = () => (
     </div>
 
     <div className="space-y-4">
-      {[
-        { subject: 'Mathematics', form: 'Form 3A', topic: 'Quadratic Equations', teacher: 'John Mwangi', date: '2024-01-15', time: '07:30 - 08:10', status: 'Verified', statusColor: 'text-emerald-700 border-emerald-200 bg-emerald-50', icon: CheckCircle2 },
-        { subject: 'English', form: 'Form 2B', topic: 'Essay Writing', teacher: 'Grace Kimaro', date: '2024-01-15', time: '08:15 - 08:55', status: 'Flagged', statusColor: 'text-red-700 border-red-200 bg-red-50', badge: 'No Check-in', icon: AlertTriangle },
-        { subject: 'Physics', form: 'Form 4A', topic: "Newton's Laws", teacher: 'Peter Makonda', date: '2024-01-15', time: '09:00 - 09:40', status: 'Pending', statusColor: 'text-orange-700 border-orange-200 bg-orange-50', icon: Clock },
-        { subject: 'Chemistry', form: 'Form 3B', topic: 'Chemical Bonding', teacher: 'Mary Shayo', date: '2024-01-15', time: '09:45 - 10:25', status: 'Pending', statusColor: 'text-orange-700 border-orange-200 bg-orange-50', icon: Clock },
-      ].map((lesson, i) => (
-        <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 text-lg">{lesson.subject}</h3>
-              <span className="text-slate-400">•</span>
-              <span className="text-sm font-medium text-slate-500">{lesson.form}</span>
+      {verifications && verifications.length > 0 ? (
+        verifications.map((lesson, i) => (
+          <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-lg">{lesson.timetables?.subjects?.name || 'Unknown'}</h3>
+                <span className="text-slate-400">•</span>
+                <span className="text-sm font-medium text-slate-500">{lesson.timetables?.classes?.name || 'Unknown'}</span>
+              </div>
+              <p className="text-slate-700 mt-1">Lesson Verification</p>
+              <div className="flex items-center gap-4 mt-3 text-xs font-medium text-slate-500">
+                <span className="flex items-center gap-1"><UserCheck className="w-3.5 h-3.5" /> {lesson.profiles?.full_name || 'Unknown'}</span>
+                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {lesson.date}</span>
+                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {new Date(lesson.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              </div>
             </div>
-            <p className="text-slate-700 mt-1">{lesson.topic}</p>
-            <div className="flex items-center gap-4 mt-3 text-xs font-medium text-slate-500">
-              <span className="flex items-center gap-1"><UserCheck className="w-3.5 h-3.5" /> {lesson.teacher}</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {lesson.date}</span>
-              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {lesson.time}</span>
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold text-emerald-700 border-emerald-200 bg-emerald-50`}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+              </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {lesson.badge && <span className="text-red-600 text-xs font-bold">{lesson.badge}</span>}
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold ${lesson.statusColor}`}>
-              <lesson.icon className="w-3.5 h-3.5" /> {lesson.status}
-            </span>
-          </div>
-        </div>
-      ))}
+        ))
+      ) : (
+        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">No lessons have been recorded or verified today.</div>
+      )}
     </div>
   </div>
 );
@@ -389,7 +386,7 @@ export const TimetableView = () => (
   </div>
 );
 
-export const TeachersView = () => (
+export const TeachersView = ({ teachers, attendance }) => (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="flex justify-between items-start">
       <div>
@@ -403,18 +400,17 @@ export const TeachersView = () => (
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-slate-900">8</p>
+        <p className="text-3xl font-bold text-slate-900">{teachers ? teachers.length : 0}</p>
         <p className="text-sm font-medium text-slate-500">Total</p>
       </div>
       <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-emerald-600">6</p>
+        <p className="text-3xl font-bold text-emerald-600">{attendance ? attendance.filter(a => a.status === 'present').length : 0}</p>
         <p className="text-sm font-medium text-emerald-700">Present</p>
       </div>
       <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-red-600">1</p>
+        <p className="text-3xl font-bold text-red-600">{attendance ? attendance.filter(a => a.status === 'absent').length : 0}</p>
         <p className="text-sm font-medium text-red-700">Absent</p>
       </div>
-      {/* Late missing in screenshot? Oh it is there, 4 cards. Wait, 4 cards. */}
     </div>
 
     <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -444,41 +440,46 @@ export const TeachersView = () => (
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {[
-            { ini: 'JM', name: 'John Mwangi', subj: 'Mathematics', stat: 'Present', time: '07:25 AM', les: [3, 5], statClass: 'text-emerald-700 border-emerald-200 bg-emerald-50', icon: CheckCircle2 },
-            { ini: 'GK', name: 'Grace Kimaro', subj: 'English', stat: 'Absent', time: '—', les: [0, 4], statClass: 'text-red-700 border-red-200 bg-red-50', icon: X },
-            { ini: 'PM', name: 'Peter Makonda', subj: 'Physics', stat: 'Late', time: '08:45 AM', les: [2, 4], statClass: 'text-orange-700 border-orange-200 bg-orange-50', icon: Clock },
-            { ini: 'MS', name: 'Mary Shayo', subj: 'Chemistry', stat: 'Present', time: '07:20 AM', les: [3, 5], statClass: 'text-emerald-700 border-emerald-200 bg-emerald-50', icon: CheckCircle2 },
-            { ini: 'DM', name: 'David Mwakesege', subj: 'Biology', stat: 'Present', time: '07:30 AM', les: [2, 4], statClass: 'text-emerald-700 border-emerald-200 bg-emerald-50', icon: CheckCircle2 },
-            { ini: 'AM', name: 'Anna Mushi', subj: 'Geography', stat: 'Present', time: '07:28 AM', les: [3, 5], statClass: 'text-emerald-700 border-emerald-200 bg-emerald-50', icon: CheckCircle2 },
-          ].map((t, i) => (
-            <tr key={i} className="hover:bg-slate-50 transition-colors text-sm">
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">{t.ini}</div>
-                  <span className="font-semibold text-slate-900">{t.name}</span>
-                </div>
-              </td>
-              <td className="p-4 text-slate-600 font-medium">{t.subj}</td>
-              <td className="p-4">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${t.statClass}`}>
-                  <t.icon className="w-3.5 h-3.5" /> {t.stat}
-                </span>
-              </td>
-              <td className="p-4 text-slate-600">{t.time}</td>
-              <td className="p-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-teal-600 rounded-full" style={{ width: `${(t.les[0]/t.les[1])*100}%` }}></div>
+          {teachers && teachers.length > 0 ? (
+            teachers.map((t, i) => {
+              const att = attendance?.find(a => a.teacher_id === t.id);
+              const isPresent = att && att.status === 'present';
+              const statClass = isPresent ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : (att ? 'text-orange-700 border-orange-200 bg-orange-50' : 'text-slate-500 border-slate-200 bg-slate-50');
+              const time = att ? new Date(att.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—';
+              
+              return (
+              <tr key={i} className="hover:bg-slate-50 transition-colors text-sm">
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
+                      {t.full_name ? t.full_name.substring(0, 2).toUpperCase() : 'U'}
+                    </div>
+                    <span className="font-semibold text-slate-900">{t.full_name || t.email}</span>
                   </div>
-                  <span className="text-xs font-medium text-slate-500">{t.les[0]}/{t.les[1]}</span>
-                </div>
-              </td>
-              <td className="p-4 text-right">
-                <button className="p-1 hover:bg-slate-200 rounded text-slate-400"><MoreHorizontal className="w-5 h-5" /></button>
-              </td>
-            </tr>
-          ))}
+                </td>
+                <td className="p-4 text-slate-600 font-medium capitalize">{t.role.replace('_', ' ')}</td>
+                <td className="p-4">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statClass}`}>
+                    {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />} {isPresent ? 'Present' : (att ? att.status : 'No Data')}
+                  </span>
+                </td>
+                <td className="p-4 text-slate-600">{time}</td>
+                <td className="p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-teal-600 rounded-full" style={{ width: '0%' }}></div>
+                    </div>
+                    <span className="text-xs font-medium text-slate-500">0/0</span>
+                  </div>
+                </td>
+                <td className="p-4 text-right">
+                  <button className="p-1 hover:bg-slate-200 rounded text-slate-400"><MoreHorizontal className="w-5 h-5" /></button>
+                </td>
+              </tr>
+            )})
+          ) : (
+            <tr><td colSpan="6" className="p-8 text-center text-slate-500">No teachers found in the system.</td></tr>
+          )}
         </tbody>
       </table>
     </div>
