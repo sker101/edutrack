@@ -13,19 +13,19 @@ export const AlertsView = ({ alerts }) => (
 
     <div className="flex gap-4 overflow-x-auto pb-2">
       <div className="bg-white p-5 rounded-xl border border-slate-200 min-w-[200px] flex-1">
-        <p className="text-3xl font-bold text-slate-900">5</p>
+        <p className="text-3xl font-bold text-slate-900">{alerts ? alerts.length : 0}</p>
         <p className="text-sm font-medium text-slate-500 mt-1">Total Alerts</p>
       </div>
       <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 min-w-[200px] flex-1">
-        <p className="text-3xl font-bold text-orange-600">3</p>
+        <p className="text-3xl font-bold text-orange-600">0</p>
         <p className="text-sm font-medium text-orange-700 mt-1">Unresolved</p>
       </div>
       <div className="bg-red-50 p-5 rounded-xl border border-red-100 min-w-[200px] flex-1">
-        <p className="text-3xl font-bold text-red-600">2</p>
+        <p className="text-3xl font-bold text-red-600">0</p>
         <p className="text-sm font-medium text-red-700 mt-1">Critical</p>
       </div>
       <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 min-w-[200px] flex-1">
-        <p className="text-3xl font-bold text-emerald-600">2</p>
+        <p className="text-3xl font-bold text-emerald-600">0</p>
         <p className="text-sm font-medium text-emerald-700 mt-1">Resolved</p>
       </div>
     </div>
@@ -39,81 +39,21 @@ export const AlertsView = ({ alerts }) => (
     </div>
 
     <div className="space-y-4">
-      <div className="bg-white p-5 rounded-xl border-l-4 border-l-red-500 border-y border-r border-slate-200 flex flex-col md:flex-row gap-4 justify-between md:items-center">
-        <div className="flex gap-4">
-          <div className="mt-1 text-red-500"><AlertTriangle className="w-5 h-5" /></div>
-          <div>
-            <h3 className="font-bold text-slate-900">Lesson without Check-in</h3>
-            <p className="text-sm text-slate-600 mt-0.5">Lesson was recorded but no biometric check-in found for the day</p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-              <span className="font-medium text-slate-700">John Mwangi</span>
-              <span>Form 3A - Mathematics</span>
-              <span>2024-01-15 09:15 AM</span>
+      {alerts && alerts.length > 0 ? (
+        alerts.map((alert, i) => (
+          <div key={i} className="bg-white p-5 rounded-xl border-l-4 border-l-red-500 border-y border-r border-slate-200 flex flex-col md:flex-row gap-4 justify-between md:items-center">
+            <div className="flex gap-4">
+              <div className="mt-1 text-red-500"><AlertTriangle className="w-5 h-5" /></div>
+              <div>
+                <h3 className="font-bold text-slate-900">{alert.title}</h3>
+                <p className="text-sm text-slate-600 mt-0.5">{alert.description}</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-100">High Priority</span>
-          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50">Dismiss</button>
-          <button className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700">Resolve</button>
-        </div>
-      </div>
-
-      <div className="bg-white p-5 rounded-xl border-l-4 border-l-red-500 border-y border-r border-slate-200 flex flex-col md:flex-row gap-4 justify-between md:items-center">
-        <div className="flex gap-4">
-          <div className="mt-1 text-red-500"><UserX className="w-5 h-5" /></div>
-          <div>
-            <h3 className="font-bold text-slate-900">Unexcused Absence</h3>
-            <p className="text-sm text-slate-600 mt-0.5">Teacher did not check in and had 4 scheduled classes</p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-              <span className="font-medium text-slate-700">Grace Kimaro</span>
-              <span>2024-01-15 08:00 AM</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-100">High Priority</span>
-          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50">Dismiss</button>
-          <button className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700">Resolve</button>
-        </div>
-      </div>
-
-      <div className="bg-white p-5 rounded-xl border-l-4 border-l-orange-400 border-y border-r border-slate-200 flex flex-col md:flex-row gap-4 justify-between md:items-center">
-        <div className="flex gap-4">
-          <div className="mt-1 text-orange-500"><Clock className="w-5 h-5" /></div>
-          <div>
-            <h3 className="font-bold text-slate-900">Late Arrival</h3>
-            <p className="text-sm text-slate-600 mt-0.5">Checked in 25 minutes after first scheduled class</p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-              <span className="font-medium text-slate-700">Peter Makonda</span>
-              <span>2024-01-15 10:25 AM</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="px-2.5 py-1 bg-orange-50 text-orange-700 text-xs font-semibold rounded-full border border-orange-100">Medium Priority</span>
-          <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50">Dismiss</button>
-          <button className="px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700">Resolve</button>
-        </div>
-      </div>
-      
-      <div className="bg-slate-50 p-5 rounded-xl border-l-4 border-l-slate-400 border-y border-r border-slate-200 flex flex-col md:flex-row gap-4 justify-between md:items-center opacity-70">
-        <div className="flex gap-4">
-          <div className="mt-1 text-slate-500"><FileQuestion className="w-5 h-5" /></div>
-          <div>
-            <h3 className="font-bold text-slate-900">Missing Lesson Record</h3>
-            <p className="text-sm text-slate-600 mt-0.5">Teacher was present but lesson record not submitted</p>
-            <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-              <span className="font-medium text-slate-700">Mary Shayo</span>
-              <span>Form 3B - Chemistry</span>
-              <span>2024-01-14 02:00 PM</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-           <span className="px-2.5 py-1 bg-slate-200 text-slate-700 text-xs font-semibold rounded-full border border-slate-300">Resolved</span>
-        </div>
-      </div>
+        ))
+      ) : (
+        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">No active alerts or flags at this time.</div>
+      )}
     </div>
   </div>
 );
