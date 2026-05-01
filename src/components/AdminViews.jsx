@@ -320,7 +320,8 @@ export const LessonsView = ({ verifications, profile, refreshData }) => {
       )}
     </div>
   </div>
-);
+  );
+};
 
 export const TimetableView = () => (
   <div className="space-y-6 animate-in fade-in duration-300">
