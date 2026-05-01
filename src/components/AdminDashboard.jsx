@@ -197,7 +197,7 @@ export default function AdminDashboard({ profile }) {
             <div className="p-2 bg-emerald-50 rounded-lg"><CheckCircle2 className="w-4 h-4 text-emerald-500" /></div>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'present').length}</p>
+            <p className="text-3xl font-bold text-slate-900">{attendance.length}</p>
             <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+5%</span>
           </div>
           <p className="text-xs text-slate-500 mt-1">89% attendance</p>
@@ -209,7 +209,7 @@ export default function AdminDashboard({ profile }) {
             <p className="text-slate-500 text-sm font-medium">Absent<br/>Today</p>
             <div className="p-2 bg-red-50 rounded-lg"><AlertTriangle className="w-4 h-4 text-red-500" /></div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">{attendance.filter(a => a.status === 'absent').length}</p>
+          <p className="text-3xl font-bold text-slate-900">{Math.max(0, teachers.length - attendance.length)}</p>
           <p className="text-xs text-slate-500 mt-1">Requires action</p>
           <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-red-50/50 to-transparent rounded-bl-full pointer-events-none"></div>
         </div>

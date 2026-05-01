@@ -185,7 +185,7 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6">
             <div className="flex items-center gap-2 mb-1">
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-emerald-800">{attendance ? attendance.filter(a => a.status === 'present').length : 0} Teachers Checked In</h3>
+              <h3 className="font-bold text-emerald-800">{attendance ? attendance.length : 0} Teachers Checked In</h3>
             </div>
             <p className="text-sm text-emerald-700">Today's verified arrivals</p>
           </div>
@@ -412,11 +412,11 @@ export const TeachersView = ({ teachers, attendance }) => (
         <p className="text-sm font-medium text-slate-500">Total</p>
       </div>
       <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-emerald-600">{attendance ? attendance.filter(a => a.status === 'present').length : 0}</p>
+        <p className="text-3xl font-bold text-emerald-600">{attendance ? attendance.length : 0}</p>
         <p className="text-sm font-medium text-emerald-700">Present</p>
       </div>
       <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-red-600">{attendance ? attendance.filter(a => a.status === 'absent').length : 0}</p>
+        <p className="text-3xl font-bold text-red-600">{teachers && attendance ? Math.max(0, teachers.length - attendance.length) : 0}</p>
         <p className="text-sm font-medium text-red-700">Absent</p>
       </div>
     </div>
@@ -451,8 +451,8 @@ export const TeachersView = ({ teachers, attendance }) => (
           {teachers && teachers.length > 0 ? (
             teachers.map((t, i) => {
               const att = attendance?.find(a => a.teacher_id === t.id);
-              const isPresent = att && att.status === 'present';
-              const statClass = isPresent ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : (att ? 'text-orange-700 border-orange-200 bg-orange-50' : 'text-slate-500 border-slate-200 bg-slate-50');
+              const isPresent = !!att;
+              const statClass = isPresent ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : 'text-slate-500 border-slate-200 bg-slate-50';
               const time = att ? new Date(att.check_in_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—';
               
               return (
@@ -468,7 +468,7 @@ export const TeachersView = ({ teachers, attendance }) => (
                 <td className="p-4 text-slate-600 font-medium capitalize">{t.role ? t.role.replace('_', ' ') : 'Teacher'}</td>
                 <td className="p-4">
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statClass}`}>
-                    {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />} {isPresent ? 'Present' : (att ? att.status : 'No Data')}
+                    {isPresent ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />} {isPresent ? 'Present' : 'Absent'}
                   </span>
                 </td>
                 <td className="p-4 text-slate-600">{time}</td>
