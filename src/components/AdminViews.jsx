@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { 
   CheckCircle2, Clock, AlertTriangle, UserX, FileQuestion, MapPin, Search, 
-  ChevronLeft, ChevronRight, Check, X, MoreHorizontal, FileText, Upload, Calendar, BookOpen, UserCheck
+  ChevronLeft, ChevronRight, Check, X, MoreHorizontal, FileText, Upload, Calendar, BookOpen, UserCheck, PlusCircle, Trash2
 } from 'lucide-react';
 
 export const AlertsView = ({ alerts }) => (
@@ -323,89 +323,242 @@ export const LessonsView = ({ verifications, profile, refreshData }) => {
   );
 };
 
-export const TimetableView = () => (
-  <div className="space-y-6 animate-in fade-in duration-300">
-    <div className="flex justify-between items-start">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Timetable</h1>
-        <p className="text-sm text-slate-500 mt-1">View and manage class schedules</p>
+export const TimetableView = () => {
+  const [timetables, setTimetables] = useState([]);
+  const [classes, setClasses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editTeacher, setEditTeacher] = useState('');
+  const [editSubject, setEditSubject] = useState('');
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const todayNum = new Date().getDay();
+  const [currentDay, setCurrentDay] = useState(todayNum === 0 || todayNum === 6 ? 1 : todayNum);
+
+  const fetchAll = useCallback(async () => {
+    const [{ data: tt }, { data: cls }, { data: sub }, { data: prof }] = await Promise.all([
+      supabase.from('timetables').select(`*, classes(id, name), subjects(id, name), profiles(id, full_name)`).eq('day_of_week', currentDay),
+      supabase.from('classes').select('*').order('name'),
+      supabase.from('subjects').select('*').order('name'),
+      supabase.from('profiles').select('id, full_name').order('full_name'),
+    ]);
+    if (tt) setTimetables(tt);
+    if (cls) setClasses(cls);
+    if (sub) setSubjects(sub);
+    if (prof) setTeachers(prof);
+  }, [currentDay]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const timeSlots = ['07:30','08:15','09:00','09:45','10:30','11:15','12:00','13:00','13:45','14:30'];
+
+  const getSlot = (classId, time) =>
+    timetables.find(t => t.class_id === classId && t.start_time?.substring(0,5) === time);
+
+  const openEdit = (slot) => {
+    setSelectedSlot(slot);
+    setEditTeacher(slot.teacher_id || '');
+    setEditSubject(slot.subject_id || '');
+    setEditStart(slot.start_time?.substring(0,5) || '');
+    setEditEnd(slot.end_time?.substring(0,5) || '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.from('timetables').update({
+      teacher_id: editTeacher,
+      subject_id: editSubject,
+      start_time: editStart,
+      end_time: editEnd,
+    }).eq('id', selectedSlot.id);
+    setLoading(false);
+    if (error) { alert('Error: ' + error.message); return; }
+    setShowEditModal(false);
+    fetchAll();
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this slot?')) return;
+    setLoading(true);
+    await supabase.from('timetables').delete().eq('id', selectedSlot.id);
+    setLoading(false);
+    setShowEditModal(false);
+    fetchAll();
+  };
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex justify-between items-start flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Timetable</h1>
+          <p className="text-sm text-slate-500 mt-1">Click any slot to edit or remove it</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setCurrentDay(d => d === 1 ? 5 : d - 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-5 h-5" /></button>
+          <div className="px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium text-sm min-w-[120px] text-center">{dayNames[currentDay]}</div>
+          <button onClick={() => setCurrentDay(d => d === 5 ? 1 : d + 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronRight className="w-5 h-5" /></button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-5 h-5" /></button>
-        <div className="px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium text-sm">Friday, 1 May 2026</div>
-        <button className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronRight className="w-5 h-5" /></button>
-      </div>
+
+      {showEditModal && selectedSlot && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-slate-900">Edit Timetable Slot</h3>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleUpdate} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Teacher</label>
+                <select value={editTeacher} onChange={e => setEditTeacher(e.target.value)} required className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900">
+                  <option value="">-- Select Teacher --</option>
+                  {teachers.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Subject</label>
+                <select value={editSubject} onChange={e => setEditSubject(e.target.value)} required className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900">
+                  <option value="">-- Select Subject --</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Start Time</label>
+                  <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)} required className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">End Time</label>
+                  <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)} required className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="button" onClick={handleDelete} disabled={loading} className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2">
+                  <Trash2 className="w-4 h-4" /> Delete Slot
+                </button>
+                <button type="submit" disabled={loading} className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm transition">
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {classes.length === 0 ? (
+        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+          No classes set up yet. Go to <strong>Setup</strong> to add classes and subjects first.
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
+          <table className="w-full text-left border-collapse" style={{minWidth: `${classes.length * 140 + 80}px`}}>
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-600">
+                <th className="p-4 w-20 sticky left-0 bg-slate-50 z-10">Time</th>
+                {classes.map(c => <th key={c.id} className="p-4 text-center whitespace-nowrap">{c.name}</th>)}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {timeSlots.map((time, i) => (
+                <tr key={i} className="hover:bg-slate-50/50">
+                  <td className="p-3 font-medium text-slate-500 text-xs align-top pt-4 sticky left-0 bg-white">{time}</td>
+                  {classes.map(cls => {
+                    const slot = getSlot(cls.id, time);
+                    if (!slot) return (
+                      <td key={cls.id} className="p-1.5">
+                        <div className="h-14 rounded-xl border border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors cursor-pointer flex items-center justify-center">
+                          <PlusCircle className="w-4 h-4 text-slate-300" />
+                        </div>
+                      </td>
+                    );
+                    return (
+                      <td key={cls.id} className="p-1.5">
+                        <div
+                          onClick={() => openEdit(slot)}
+                          className="p-2 rounded-xl border border-teal-100 bg-teal-50 min-h-[3.5rem] flex flex-col justify-center cursor-pointer hover:shadow-md hover:border-teal-300 transition-all group"
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs font-bold text-teal-700 leading-tight">{slot.subjects?.name || '—'}</span>
+                            <MoreHorizontal className="w-3 h-3 text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          </div>
+                          <span className="text-xs text-slate-500 mt-0.5 truncate">{slot.profiles?.full_name?.split(' ')[0] || '—'}</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
+  );
+};
 
-    <div className="flex items-center gap-4 text-sm font-medium text-slate-600 mb-2">
-      <span className="flex items-center gap-1 text-emerald-600"><CheckCircle2 className="w-4 h-4" /> Completed</span>
-      <span className="flex items-center gap-1 text-teal-600"><Clock className="w-4 h-4" /> Ongoing</span>
-      <span className="flex items-center gap-1 text-slate-500"><Clock className="w-4 h-4" /> Upcoming</span>
-      <span className="flex items-center gap-1 text-red-500"><X className="w-4 h-4 border border-red-500 rounded-full" /> Missed</span>
-    </div>
 
-    <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[800px]">
-        <thead>
-          <tr className="bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-600">
-            <th className="p-4 w-24">Time</th>
-            {['Form 1A', 'Form 1B', 'Form 2A', 'Form 2B', 'Form 3A', 'Form 3B', 'Form 4A', 'Form 4B'].map(f => (
-              <th key={f} className="p-4 text-center">{f}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {[
-            { time: '07:30', blocks: [{f:0, s:'Math', t:'J. Mwangi', st:'completed'}, {f:2, s:'Physics', t:'D. Mwakesege', st:'completed'}, {f:3, s:'Chemistry', t:'J. Tarimo', st:'completed'}, {f:4, s:'Biology', t:'J. Mwangi', st:'completed'}, {f:5, s:'Geography', t:'P. Makonda', st:'completed'}, {f:6, s:'History', t:'D. Mwakesege', st:'completed'}, {f:7, s:'Swahili', t:'J. Tarimo', st:'completed'}] },
-            { time: '08:15', blocks: [{f:0, s:'English', t:'G. Kimaro', st:'completed'}, {f:3, s:'Biology', t:'S. Kimaro', st:'completed'}, {f:6, s:'Swahili', t:'A. Mushi', st:'completed'}] },
-            { time: '09:00', blocks: [{f:0, s:'Physics', t:'P. Makonda', st:'ongoing'}, {f:2, s:'Biology', t:'J. Tarimo', st:'ongoing'}, {f:3, s:'Geography', t:'J. Mwangi', st:'ongoing'}, {f:4, s:'History', t:'P. Makonda', st:'ongoing'}, {f:5, s:'Swahili', t:'D. Mwakesege', st:'ongoing'}, {f:6, s:'Math', t:'J. Tarimo', st:'ongoing'}] },
-            { time: '09:45', blocks: [{f:0, s:'Chemistry', t:'M. Shayo', st:'upcoming'}, {f:1, s:'Biology', t:'A. Mushi', st:'missed'}, {f:2, s:'Geography', t:'S. Kimaro', st:'upcoming'}, {f:3, s:'History', t:'G. Kimaro', st:'upcoming'}, {f:4, s:'Swahili', t:'M. Shayo', st:'upcoming'}, {f:5, s:'Math', t:'A. Mushi', st:'upcoming'}, {f:6, s:'English', t:'S. Kimaro', st:'upcoming'}, {f:7, s:'Physics', t:'G. Kimaro', st:'upcoming'}] },
-            { time: '10:30', blocks: [{f:0, s:'Biology', t:'D. Mwakesege', st:'upcoming'}, {f:3, s:'History', t:'J. Mwangi', st:'upcoming'}, {f:4, s:'Swahili', t:'P. Makonda', st:'upcoming'}, {f:6, s:'English', t:'J. Tarimo', st:'upcoming'}, {f:7, s:'Physics', t:'J. Mwangi', st:'upcoming'}] },
-            { time: '11:15', blocks: [{f:0, s:'Geography', t:'A. Mushi', st:'upcoming'}, {f:1, s:'History', t:'S. Kimaro', st:'upcoming'}, {f:3, s:'Math', t:'M. Shayo', st:'upcoming'}, {f:4, s:'English', t:'A. Mushi', st:'upcoming'}, {f:5, s:'Physics', t:'S. Kimaro', st:'upcoming'}, {f:6, s:'Chemistry', t:'G. Kimaro', st:'upcoming'}] }
-          ].map((row, i) => (
-            <tr key={i} className="hover:bg-slate-50/50">
-              <td className="p-4 font-medium text-slate-500 text-sm align-top pt-5">{row.time}</td>
-              {[0,1,2,3,4,5,6,7].map(colIdx => {
-                const block = row.blocks.find(b => b.f === colIdx);
-                if (!block) return <td key={colIdx} className="p-2"><div className="h-16 rounded-xl border border-dashed border-slate-200"></div></td>;
-                
-                let bg, border, text, icon;
-                if (block.st === 'completed') { bg='bg-emerald-50'; border='border-emerald-100'; text='text-emerald-700'; icon=<CheckCircle2 className="w-3.5 h-3.5" />; }
-                else if (block.st === 'ongoing') { bg='bg-teal-50'; border='border-teal-100'; text='text-teal-700'; icon=<Clock className="w-3.5 h-3.5" />; }
-                else if (block.st === 'missed') { bg='bg-red-50'; border='border-red-100'; text='text-red-700'; icon=<X className="w-3.5 h-3.5 border border-red-700 rounded-full" />; }
-                else { bg='bg-white'; border='border-slate-200'; text='text-slate-700'; icon=<Clock className="w-3.5 h-3.5 text-slate-400" />; }
+export const TeachersView = ({ teachers, attendance }) => {
+  const [filter, setFilter] = useState('All');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newName, setNewName] = useState('');
 
-                return (
-                  <td key={colIdx} className="p-2">
-                    <div className={`p-2 rounded-xl border ${bg} ${border} h-full min-h-[4rem] relative flex flex-col justify-center cursor-pointer hover:shadow-md transition-shadow`}>
-                      <div className="flex justify-between items-start">
-                        <span className={`text-sm font-bold ${text}`}>{block.s}</span>
-                        {icon}
-                      </div>
-                      <span className="text-xs text-slate-500 mt-1 truncate">{block.t}</span>
-                    </div>
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+  const filteredTeachers = teachers?.filter(t => {
+    if (filter === 'All') return true;
+    const att = attendance?.find(a => a.teacher_id === t.id);
+    if (filter === 'Present') return !!att;
+    if (filter === 'Absent') return !att;
+    return true;
+  });
 
-export const TeachersView = ({ teachers, attendance }) => (
+  const handleAddTeacher = async (e) => {
+    e.preventDefault();
+    alert("In this environment, new users must sign up via the Login screen first to create secure authentication credentials. Once they sign up, they will appear in this list and you can assign them classes.");
+    setShowAddModal(false);
+  };
+
+  return (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="flex justify-between items-start">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Teachers</h1>
         <p className="text-sm text-slate-500 mt-1">Manage and monitor teacher attendance</p>
       </div>
-      <button className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition">
+      <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition">
         Add Teacher
       </button>
     </div>
+
+    {showAddModal && (
+      <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-bold text-lg text-slate-900">Invite New Teacher</h3>
+            <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+          </div>
+          <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <input type="text" required value={newName} onChange={e => setNewName(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" placeholder="e.g. Jane Doe" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+              <input type="email" required value={newEmail} onChange={e => setNewEmail(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" placeholder="jane@school.edu" />
+            </div>
+            <div className="pt-2">
+              <button type="submit" className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-sm">Send Invite Link</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
 
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center">
@@ -423,14 +576,18 @@ export const TeachersView = ({ teachers, attendance }) => (
     </div>
 
     <div className="flex flex-col md:flex-row gap-4 items-center">
-      <div className="relative flex-1">
-        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input type="text" placeholder="Search teachers..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
+      <div className="relative flex-1 w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input type="text" placeholder="Search teachers..." className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white" />
       </div>
-      <div className="flex items-center gap-2 overflow-x-auto">
-        {['All', 'Present', 'Absent', 'Late'].map((filter, i) => (
-          <button key={i} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${i === 0 ? 'bg-teal-700 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
-            {filter}
+      <div className="flex items-center gap-2 bg-white border border-slate-200 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
+        {['All', 'Present', 'Absent', 'Late'].map(t => (
+          <button 
+            key={t}
+            onClick={() => setFilter(t)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${filter === t ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            {t}
           </button>
         ))}
       </div>
@@ -449,8 +606,8 @@ export const TeachersView = ({ teachers, attendance }) => (
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {teachers && teachers.length > 0 ? (
-            teachers.map((t, i) => {
+          {filteredTeachers && filteredTeachers.length > 0 ? (
+            filteredTeachers.map((t, i) => {
               const att = attendance?.find(a => a.teacher_id === t.id);
               const isPresent = !!att;
               const statClass = isPresent ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : 'text-slate-500 border-slate-200 bg-slate-50';
@@ -493,4 +650,5 @@ export const TeachersView = ({ teachers, attendance }) => (
       </table>
     </div>
   </div>
-);
+  );
+};
