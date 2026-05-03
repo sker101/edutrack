@@ -86,6 +86,13 @@ export default function AdminDashboard({ profile }) {
   const [newClassName, setNewClassName] = useState('');
   const [newSubjectName, setNewSubjectName] = useState('');
 
+  // Create Teacher State
+  const [newTeacherEmail, setNewTeacherEmail] = useState('');
+  const [newTeacherName, setNewTeacherName] = useState('');
+  const [newTeacherPassword, setNewTeacherPassword] = useState('');
+  const [creatingTeacher, setCreatingTeacher] = useState(false);
+  const [teacherMsg, setTeacherMsg] = useState({ type: '', text: '' });
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -169,6 +176,62 @@ export default function AdminDashboard({ profile }) {
     if (!window.confirm("Are you sure? This might break existing timetables.")) return;
     await supabase.from('subjects').delete().eq('id', id);
     fetchData();
+  };
+
+  const handleCreateTeacher = async (e) => {
+    e.preventDefault();
+    setCreatingTeacher(true);
+    setTeacherMsg({ type: '', text: '' });
+    // Sign up the teacher — Supabase creates the auth account
+    const { data, error } = await supabase.auth.admin
+      ? await (async () => {
+          // Use the service-role admin API if available
+          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/admin/users`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              email: newTeacherEmail,
+              password: newTeacherPassword,
+              email_confirm: true,
+            }),
+          });
+          return await res.json();
+        })()
+      : {};
+
+    // Fallback: use signUp (works for new accounts)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: newTeacherEmail,
+      password: newTeacherPassword,
+      options: { data: { full_name: newTeacherName } }
+    });
+
+    if (signUpError) {
+      setTeacherMsg({ type: 'error', text: signUpError.message });
+      setCreatingTeacher(false);
+      return;
+    }
+
+    const userId = signUpData?.user?.id;
+    if (userId) {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        full_name: newTeacherName,
+        email: newTeacherEmail,
+        role: 'teacher',
+      });
+    }
+
+    setTeacherMsg({ type: 'success', text: `Account created for ${newTeacherName}. They can now sign in with their password.` });
+    setNewTeacherEmail('');
+    setNewTeacherName('');
+    setNewTeacherPassword('');
+    fetchData();
+    setCreatingTeacher(false);
   };
 
   const renderDashboard = () => (
@@ -484,42 +547,75 @@ export default function AdminDashboard({ profile }) {
   );
 
   const renderSetup = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
-          <Layers className="w-6 h-6 text-purple-600" /> Manage Classes
+    <div className="space-y-6">
+      {/* Create Teacher Account */}
+      <div className="bg-white p-6 rounded-xl border border-teal-100 shadow-sm">
+        <h2 className="text-xl font-bold mb-1 flex items-center gap-2 text-slate-900">
+          <Users className="w-6 h-6 text-teal-600" /> Create Teacher Account
         </h2>
-        <form onSubmit={handleAddClass} className="flex gap-2 mb-4">
-          <input type="text" required placeholder="e.g. Form 1A" value={newClassName} onChange={e => setNewClassName(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
-          <button type="submit" disabled={loading} className="px-5 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700">Add</button>
+        <p className="text-sm text-slate-500 mb-4">Register a new teacher with email &amp; password so they can sign in every day without any email OTP limits.</p>
+        <form onSubmit={handleCreateTeacher} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input type="text" required placeholder="Full Name" value={newTeacherName}
+            onChange={e => setNewTeacherName(e.target.value)}
+            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+          <input type="email" required placeholder="Email address" value={newTeacherEmail}
+            onChange={e => setNewTeacherEmail(e.target.value)}
+            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+          <input type="password" required placeholder="Temporary password (min 8 chars)" minLength={8} value={newTeacherPassword}
+            onChange={e => setNewTeacherPassword(e.target.value)}
+            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+          <button type="submit" disabled={creatingTeacher}
+            className="md:col-span-3 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 text-white rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition">
+            <PlusCircle className="w-4 h-4" />
+            {creatingTeacher ? 'Creating...' : 'Create Teacher Account'}
+          </button>
         </form>
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-          {classes.length === 0 && <p className="text-sm text-slate-500">No classes created yet.</p>}
-          {classes.map(c => (
-            <div key={c.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <span className="text-sm font-medium text-slate-900">{c.name}</span>
-              <button onClick={() => handleDeleteClass(c.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
-            </div>
-          ))}
-        </div>
+        {teacherMsg.text && (
+          <p className={`mt-3 text-sm px-3 py-2 rounded-lg border ${
+            teacherMsg.type === 'success'
+              ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+              : 'bg-red-50 border-red-100 text-red-700'
+          }`}>{teacherMsg.text}</p>
+        )}
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
-          <Book className="w-6 h-6 text-blue-600" /> Manage Subjects
-        </h2>
-        <form onSubmit={handleAddSubject} className="flex gap-2 mb-4">
-          <input type="text" required placeholder="e.g. Mathematics" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
-          <button type="submit" disabled={loading} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Add</button>
-        </form>
-        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-          {subjects.length === 0 && <p className="text-sm text-slate-500">No subjects created yet.</p>}
-          {subjects.map(s => (
-            <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
-              <span className="text-sm font-medium text-slate-900">{s.name}</span>
-              <button onClick={() => handleDeleteSubject(s.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
-            </div>
-          ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+            <Layers className="w-6 h-6 text-purple-600" /> Manage Classes
+          </h2>
+          <form onSubmit={handleAddClass} className="flex gap-2 mb-4">
+            <input type="text" required placeholder="e.g. Form 1A" value={newClassName} onChange={e => setNewClassName(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+            <button type="submit" disabled={loading} className="px-5 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-bold hover:bg-purple-700">Add</button>
+          </form>
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+            {classes.length === 0 && <p className="text-sm text-slate-500">No classes created yet.</p>}
+            {classes.map(c => (
+              <div key={c.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span className="text-sm font-medium text-slate-900">{c.name}</span>
+                <button onClick={() => handleDeleteClass(c.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+            <Book className="w-6 h-6 text-blue-600" /> Manage Subjects
+          </h2>
+          <form onSubmit={handleAddSubject} className="flex gap-2 mb-4">
+            <input type="text" required placeholder="e.g. Mathematics" value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+            <button type="submit" disabled={loading} className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Add</button>
+          </form>
+          <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+            {subjects.length === 0 && <p className="text-sm text-slate-500">No subjects created yet.</p>}
+            {subjects.map(s => (
+              <div key={s.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg border border-slate-100">
+                <span className="text-sm font-medium text-slate-900">{s.name}</span>
+                <button onClick={() => handleDeleteSubject(s.id)} className="text-red-500 hover:text-red-700"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
