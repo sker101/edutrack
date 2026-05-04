@@ -8,6 +8,7 @@ function App() {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [appLoading, setAppLoading] = useState(true)
+  const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -15,7 +16,10 @@ function App() {
       if (session) fetchProfile(session.user.id)
       else setAppLoading(false)
     })
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setNeedsPasswordReset(true)
+      }
       setSession(session)
       if (session) fetchProfile(session.user.id)
       else { setProfile(null); setAppLoading(false) }
@@ -42,6 +46,9 @@ function App() {
   }
 
   if (!session) return <Login />
+
+  // Password Recovery Flow
+  if (needsPasswordReset) return <ResetPasswordScreen onComplete={() => setNeedsPasswordReset(false)} />
 
   // First time login — no full name yet
   if (!profile?.full_name) return <Onboarding session={session} onComplete={fetchProfile} />
@@ -293,6 +300,78 @@ function Onboarding({ session, onComplete }) {
               className="w-full py-3 bg-teal-500 hover:bg-teal-400 disabled:bg-teal-800 disabled:text-teal-500 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
               {loading ? 'Saving...' : 'Continue to Dashboard'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── RESET PASSWORD SCREEN ─── */
+function ResetPasswordScreen({ onComplete }) {
+  const [password, setPassword] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [showPw, setShowPw] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleReset = async (e) => {
+    e.preventDefault()
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
+    if (password !== confirmPw) { setError('Passwords do not match.'); return }
+    setLoading(true)
+    setError('')
+    
+    const { error: updateError } = await supabase.auth.updateUser({ password })
+    if (updateError) {
+      setError(updateError.message)
+      setLoading(false)
+    } else {
+      onComplete() // Proceed to dashboard
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md relative z-10">
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-2xl shadow-teal-900/50 mb-4">
+            <KeyRound className="w-9 h-9 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Set New Password</h1>
+          <p className="text-teal-300 text-sm mt-1 font-medium">Please enter your new password</p>
+        </div>
+
+        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl">
+          <form onSubmit={handleReset} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="Min. 8 characters" required minLength={8} autoFocus
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-11 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 transition" />
+                <button type="button" onClick={() => setShowPw(p => !p)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+                  {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Confirm New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input type={showPw ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
+                  placeholder="Re-enter password" required
+                  className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 transition" />
+              </div>
+            </div>
+            {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
+            <button type="submit" disabled={loading}
+              className="w-full py-3 mt-2 bg-teal-500 hover:bg-teal-400 disabled:bg-teal-800 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-teal-900/30">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              {loading ? 'Saving...' : 'Update Password'}
             </button>
           </form>
         </div>
