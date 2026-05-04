@@ -195,39 +195,52 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
   );
 };
 
-export const LessonsView = ({ verifications, profile, refreshData }) => {
+export const LessonsView = ({ verifications, teachers, profile, refreshData }) => {
   const [recording, setRecording] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [selectedTimetable, setSelectedTimetable] = useState('');
+  const [teacherLessons, setTeacherLessons] = useState([]);
 
-  const handleRecordLesson = async () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
+  useEffect(() => {
+    if (selectedTeacher) {
+      fetchTeacherSchedule();
     }
+  }, [selectedTeacher]);
 
+  async function fetchTeacherSchedule() {
+    const today = new Date().getDay();
+    const currentDay = today === 0 ? 7 : today;
+    const { data } = await supabase
+      .from('timetables')
+      .select('*, classes(name), subjects(name)')
+      .eq('teacher_id', selectedTeacher)
+      .eq('day_of_week', currentDay);
+    if (data) setTeacherLessons(data);
+  }
+
+  const handleManualVerify = async (e) => {
+    e.preventDefault();
+    if (!selectedTimetable) return;
     setRecording(true);
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      const today = new Date().toISOString().split('T')[0];
-      
-      const { error } = await supabase.from('lesson_verifications').insert([{
-        teacher_id: profile?.id,
-        date: today,
-        location_lat: latitude,
-        location_lng: longitude
-        // Note: timetable_id would normally be selected by the user here
-      }]);
-      
-      setRecording(false);
-      if (error) {
-        alert("Error recording lesson: " + error.message);
-      } else {
-        alert("Lesson recorded and verified successfully!");
-        if (refreshData) refreshData();
-      }
-    }, (err) => {
-      alert("Error getting location. Ensure location permissions are enabled.");
-      setRecording(false);
-    });
+    
+    const { error } = await supabase.from('lesson_verifications').insert([{
+      teacher_id: selectedTeacher,
+      timetable_id: selectedTimetable,
+      date: new Date().toISOString().split('T')[0],
+      location_lat: 0,
+      location_lng: 0,
+      verified_by_admin: true
+    }]);
+
+    setRecording(false);
+    if (error) {
+      alert("Error: " + error.message);
+    } else {
+      alert("Lesson verified manually!");
+      setShowManualModal(false);
+      if (refreshData) refreshData();
+    }
   };
 
   return (
@@ -238,12 +251,54 @@ export const LessonsView = ({ verifications, profile, refreshData }) => {
         <p className="text-sm text-slate-500 mt-1">Track and verify completed lessons</p>
       </div>
       <button 
-        onClick={handleRecordLesson}
-        disabled={recording}
-        className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 disabled:bg-teal-400 text-white rounded-xl text-sm font-bold shadow-sm transition"
+        onClick={() => setShowManualModal(true)}
+        className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition"
       >
-        {recording ? 'Recording...' : 'Record Lesson'}
+        Manual Record
       </button>
+
+      {showManualModal && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-slate-900">Manual Lesson Record</h3>
+              <button onClick={() => setShowManualModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <form onSubmit={handleManualVerify} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Select Teacher</label>
+                <select required value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                  <option value="">-- Choose Teacher --</option>
+                  {teachers?.map(t => <option key={t.id} value={t.id}>{t.full_name}</option>)}
+                </select>
+              </div>
+
+              {selectedTeacher && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Select Lesson (Today)</label>
+                  <select required value={selectedTimetable} onChange={e => setSelectedTimetable(e.target.value)} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+                    <option value="">-- Choose Lesson --</option>
+                    {teacherLessons.map(l => (
+                      <option key={l.id} value={l.id}>
+                        {l.start_time.substring(0,5)}: {l.subjects?.name} ({l.classes?.name})
+                      </option>
+                    ))}
+                  </select>
+                  {teacherLessons.length === 0 && <p className="text-[11px] text-red-500 mt-1">No lessons scheduled for this teacher today.</p>}
+                </div>
+              )}
+
+              <button 
+                type="submit" 
+                disabled={recording || !selectedTimetable}
+                className="w-full py-3 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 text-white rounded-xl font-bold transition shadow-sm"
+              >
+                {recording ? 'Verifying...' : 'Verify Lesson Now'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
