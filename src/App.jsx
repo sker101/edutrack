@@ -191,7 +191,10 @@ function Login() {
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
               </form>
-              <p className="text-center text-slate-500 text-xs mt-6">Secure password sign-in · Contact admin to reset</p>
+              <div className="mt-6 text-center space-y-1">
+                <p className="text-slate-500 text-xs">Secure password sign-in · <button type="button" onClick={() => { setMode('forgot'); setError('') }} className="text-teal-500 hover:text-teal-400 underline">Forgot password?</button></p>
+                <p className="text-slate-600 text-xs">No account yet? <span className="text-slate-400">Ask your school admin to create one for you.</span></p>
+              </div>
             </>
           )}
         </div>
