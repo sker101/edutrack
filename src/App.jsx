@@ -233,7 +233,12 @@ function Onboarding({ session, onComplete }) {
     if (pwErr) { setPwError(pwErr.message); setLoading(false); return }
     const { error } = await supabase
       .from('profiles')
-      .upsert({ id: session.user.id, full_name: fullName.trim(), email: session.user.email })
+      .upsert({ 
+        id: session.user.id, 
+        full_name: fullName.trim(), 
+        email: session.user.email,
+        role: 'teacher' // Default role for new signups/invites
+      })
     if (error) { alert(error.message); setLoading(false); return; }
     onComplete(session.user.id)
   }

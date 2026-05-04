@@ -182,52 +182,28 @@ export default function AdminDashboard({ profile }) {
     e.preventDefault();
     setCreatingTeacher(true);
     setTeacherMsg({ type: '', text: '' });
-    // Sign up the teacher — Supabase creates the auth account
-    const { data, error } = await supabase.auth.admin
-      ? await (async () => {
-          // Use the service-role admin API if available
-          const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/auth/v1/admin/users`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              email: newTeacherEmail,
-              password: newTeacherPassword,
-              email_confirm: true,
-            }),
-          });
-          return await res.json();
-        })()
-      : {};
-
-    // Fallback: use signUp (works for new accounts)
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    
+    // Send a Magic Link (OTP) to the teacher's email
+    // This allows them to "create" their account by signing in for the first time
+    const { error } = await supabase.auth.signInWithOtp({
       email: newTeacherEmail,
-      password: newTeacherPassword,
-      options: { data: { full_name: newTeacherName } }
+      options: {
+        emailRedirectTo: window.location.origin,
+      }
     });
 
-    if (signUpError) {
-      setTeacherMsg({ type: 'error', text: signUpError.message });
-      setCreatingTeacher(false);
-      return;
-    }
-
-    const userId = signUpData?.user?.id;
-    if (userId) {
-      await supabase.from('profiles').upsert({
-        id: userId,
-        full_name: newTeacherName,
-        email: newTeacherEmail,
-        role: 'teacher',
+    if (error) {
+      setTeacherMsg({ type: 'error', text: error.message });
+    } else {
+      setTeacherMsg({ 
+        type: 'success', 
+        text: `Invitation email sent to ${newTeacherEmail}. They can click the link in the email to set up their account.` 
       });
+      setNewTeacherEmail('');
     }
-
-    setTeacherMsg({ type: 'success', text: `Account created for ${newTeacherName}. They can now sign in with their password.` });
-    setNewTeacherEmail('');
+    
+    setCreatingTeacher(false);
+  };
     setNewTeacherName('');
     setNewTeacherPassword('');
     fetchData();
@@ -548,26 +524,20 @@ export default function AdminDashboard({ profile }) {
 
   const renderSetup = () => (
     <div className="space-y-6">
-      {/* Create Teacher Account */}
+      {/* Invite Teacher */}
       <div className="bg-white p-6 rounded-xl border border-teal-100 shadow-sm">
         <h2 className="text-xl font-bold mb-1 flex items-center gap-2 text-slate-900">
-          <Users className="w-6 h-6 text-teal-600" /> Create Teacher Account
+          <Mail className="w-6 h-6 text-teal-600" /> Invite New Teacher
         </h2>
-        <p className="text-sm text-slate-500 mb-4">Register a new teacher with email &amp; password so they can sign in every day without any email OTP limits.</p>
-        <form onSubmit={handleCreateTeacher} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input type="text" required placeholder="Full Name" value={newTeacherName}
-            onChange={e => setNewTeacherName(e.target.value)}
-            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
-          <input type="email" required placeholder="Email address" value={newTeacherEmail}
+        <p className="text-sm text-slate-500 mb-4">Enter the teacher's email address. They will receive a magic link to sign in and set up their profile.</p>
+        <form onSubmit={handleCreateTeacher} className="flex gap-3">
+          <input type="email" required placeholder="teacher@school.ac.tz" value={newTeacherEmail}
             onChange={e => setNewTeacherEmail(e.target.value)}
-            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
-          <input type="password" required placeholder="Temporary password (min 8 chars)" minLength={8} value={newTeacherPassword}
-            onChange={e => setNewTeacherPassword(e.target.value)}
-            className="p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
+            className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
           <button type="submit" disabled={creatingTeacher}
-            className="md:col-span-3 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 text-white rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition">
+            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 text-white rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition">
             <PlusCircle className="w-4 h-4" />
-            {creatingTeacher ? 'Creating...' : 'Create Teacher Account'}
+            {creatingTeacher ? 'Sending...' : 'Send Invite'}
           </button>
         </form>
         {teacherMsg.text && (
