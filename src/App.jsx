@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import AdminDashboard from './components/AdminDashboard'
 import TeacherPortal from './components/TeacherPortal'
-import { GraduationCap, Mail, User, ArrowRight, Loader2, Lock, Eye, EyeOff, KeyRound } from 'lucide-react'
+import { GraduationCap, Mail, User, ArrowRight, Loader2, Lock, Eye, EyeOff, KeyRound, Clock } from 'lucide-react'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -55,25 +55,56 @@ function App() {
 
   // Role-based routing
   const role = profile.role
+  if (role === 'pending') {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 text-center">
+        <div className="max-w-md bg-white/5 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl">
+          <div className="w-16 h-16 bg-amber-500/20 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-8 h-8 text-amber-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-2">Account Pending</h2>
+          <p className="text-slate-400 leading-relaxed mb-6">Welcome, {profile.full_name}! Your account has been created successfully. An administrator needs to approve your access before you can use the dashboard.</p>
+          <button onClick={() => supabase.auth.signOut()} className="text-teal-400 hover:text-teal-300 underline font-medium">Sign out</button>
+        </div>
+      </div>
+    )
+  }
+  
   if (role === 'teacher') return <TeacherPortal profile={profile} session={session} />
   return <AdminDashboard profile={profile} session={session} />
 }
 
-/* ─── PASSWORD LOGIN PAGE ─── */
+/* ─── PASSWORD LOGIN & SIGNUP PAGE ─── */
 function Login() {
-  const [mode, setMode] = useState('login') // 'login' | 'forgot' | 'reset_sent'
+  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'forgot' | 'reset_sent'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const handleLogin = async (e) => {
+  const handleAuth = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
+    
+    if (mode === 'login') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) setError(error.message)
+    } else {
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      })
+      if (error) setError(error.message)
+      else if (mode === 'signup') {
+        // If confirmation is disabled in Supabase, they will be logged in immediately.
+        // If enabled, they will see an error or need to check email.
+      }
+    }
     setLoading(false)
   }
 
@@ -159,12 +190,19 @@ function Login() {
             </>
           )}
 
-          {/* ── SIGN IN ── */}
-          {mode === 'login' && (
+          {/* ── SIGN IN / SIGN UP ── */}
+          {(mode === 'login' || mode === 'signup') && (
             <>
-              <h2 className="text-xl font-bold text-white mb-1">Welcome back</h2>
-              <p className="text-slate-400 text-sm mb-6">Sign in with your school email and password</p>
-              <form onSubmit={handleLogin} className="space-y-4">
+              <h2 className="text-xl font-bold text-white mb-1">
+                {mode === 'login' ? 'Welcome back' : 'Create Account'}
+              </h2>
+              <p className="text-slate-400 text-sm mb-6">
+                {mode === 'login' 
+                  ? 'Sign in with your school email and password' 
+                  : 'Register your school email to join EduTrack'}
+              </p>
+              
+              <form onSubmit={handleAuth} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
                   <div className="relative">
@@ -177,13 +215,15 @@ function Login() {
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
                     <label className="text-sm font-medium text-slate-300">Password</label>
-                    <button type="button" onClick={() => { setMode('forgot'); setError('') }}
-                      className="text-teal-400 text-xs hover:text-teal-300 transition">Forgot password?</button>
+                    {mode === 'login' && (
+                      <button type="button" onClick={() => { setMode('forgot'); setError('') }}
+                        className="text-teal-400 text-xs hover:text-teal-300 transition">Forgot password?</button>
+                    )}
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                     <input type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                      placeholder="••••••••" required
+                      placeholder="••••••••" required minLength={8}
                       className="w-full bg-white/5 border border-white/10 text-white placeholder-slate-500 rounded-xl pl-10 pr-11 py-3 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition" />
                     <button type="button" onClick={() => setShowPw(p => !p)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
@@ -192,15 +232,26 @@ function Login() {
                   </div>
                 </div>
                 {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
+                
                 <button type="submit" disabled={loading}
                   className="w-full py-3 bg-teal-500 hover:bg-teal-400 disabled:bg-teal-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-teal-900/30">
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? (mode === 'login' ? 'Signing in...' : 'Creating account...') : (mode === 'login' ? 'Sign In' : 'Create Account')}
                 </button>
               </form>
-              <div className="mt-6 text-center space-y-1">
-                <p className="text-slate-500 text-xs">Secure password sign-in · <button type="button" onClick={() => { setMode('forgot'); setError('') }} className="text-teal-500 hover:text-teal-400 underline">Forgot password?</button></p>
-                <p className="text-slate-600 text-xs">No account yet? <span className="text-slate-400">Ask your school admin to create one for you.</span></p>
+
+              <div className="mt-6 text-center space-y-3">
+                <p className="text-slate-500 text-xs">
+                  {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
+                  <button onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError('') }} className="text-teal-400 hover:text-teal-300 font-medium underline">
+                    {mode === 'login' ? 'Create one now' : 'Sign in here'}
+                  </button>
+                </p>
+                {mode === 'signup' && (
+                  <p className="text-slate-500 text-[10px] leading-relaxed px-4">
+                    Note: Your account will need to be approved by an administrator before you can access the dashboard.
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -237,7 +288,7 @@ function Onboarding({ session, onComplete }) {
         id: session.user.id, 
         full_name: fullName.trim(), 
         email: session.user.email,
-        role: 'teacher' // Default role for new signups/invites
+        role: 'pending' // Account starts as pending approval
       })
     if (error) { alert(error.message); setLoading(false); return; }
     onComplete(session.user.id)

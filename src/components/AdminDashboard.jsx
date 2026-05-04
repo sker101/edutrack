@@ -520,29 +520,30 @@ export default function AdminDashboard({ profile }) {
 
   const renderSetup = () => (
     <div className="space-y-6">
-      {/* Invite Teacher */}
+      {/* Teacher Registration Guide */}
       <div className="bg-white p-6 rounded-xl border border-teal-100 shadow-sm">
         <h2 className="text-xl font-bold mb-1 flex items-center gap-2 text-slate-900">
-          <Mail className="w-6 h-6 text-teal-600" /> Invite New Teacher
+          <Users className="w-6 h-6 text-teal-600" /> Registering Teachers
         </h2>
-        <p className="text-sm text-slate-500 mb-4">Enter the teacher's email address. They will receive a magic link to sign in and set up their profile.</p>
-        <form onSubmit={handleCreateTeacher} className="flex gap-3">
-          <input type="email" required placeholder="teacher@school.ac.tz" value={newTeacherEmail}
-            onChange={e => setNewTeacherEmail(e.target.value)}
-            className="flex-1 p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" />
-          <button type="submit" disabled={creatingTeacher}
-            className="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-teal-300 text-white rounded-lg text-sm font-bold flex justify-center items-center gap-2 transition">
-            <PlusCircle className="w-4 h-4" />
-            {creatingTeacher ? 'Sending...' : 'Send Invite'}
-          </button>
-        </form>
-        {teacherMsg.text && (
-          <p className={`mt-3 text-sm px-3 py-2 rounded-lg border ${
-            teacherMsg.type === 'success'
-              ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-              : 'bg-red-50 border-red-100 text-red-700'
-          }`}>{teacherMsg.text}</p>
-        )}
+        <p className="text-sm text-slate-500 mb-6">To avoid email rate limits, teachers can now create their own accounts. Follow these steps:</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm">1</div>
+            <p className="text-sm font-bold text-slate-900">Teacher Signs Up</p>
+            <p className="text-xs text-slate-500">Ask the teacher to go to the login page and click <strong>"Create one now"</strong> to register their email and password.</p>
+          </div>
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm">2</div>
+            <p className="text-sm font-bold text-slate-900">Account Pending</p>
+            <p className="text-xs text-slate-500">After they register and enter their name, they will see a "Pending Approval" message and cannot access the app yet.</p>
+          </div>
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-sm">3</div>
+            <p className="text-sm font-bold text-slate-900">Admin Approval</p>
+            <p className="text-xs text-slate-500">Go to the <strong>Teachers</strong> tab in your dashboard. You will see them in the "Pending Approvals" list. Click <strong>"Approve"</strong> to grant them access.</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -701,7 +702,7 @@ export default function AdminDashboard({ profile }) {
           {activeMenu === 'Check-In' && <CheckInView attendance={attendance} profile={profile} refreshData={fetchData} />}
           {activeMenu === 'Lessons' && <LessonsView verifications={verifications} profile={profile} refreshData={fetchData} />}
           {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
-          {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} />}
+          {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} refreshData={fetchData} />}
           {activeMenu === 'Reports' && (
             <div className="flex items-center justify-center h-[50vh] text-slate-500">
               <p>Reports section is under construction.</p>

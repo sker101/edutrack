@@ -503,14 +503,35 @@ export const TimetableView = () => {
   );
 };
 
-
-export const TeachersView = ({ teachers, attendance }) => {
+export const TeachersView = ({ teachers, attendance, refreshData }) => {
   const [filter, setFilter] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
 
-  const filteredTeachers = teachers?.filter(t => {
+  const handleAddTeacher = async (e) => {
+    e.preventDefault();
+    alert("In this environment, new users must sign up via the Login screen first to create secure authentication credentials. Once they sign up, they will appear in the 'Pending Approval' list above.");
+    setShowAddModal(false);
+  };
+
+  const handleApproveTeacher = async (id) => {
+    const { error } = await supabase.from('profiles').update({ role: 'teacher' }).eq('id', id);
+    if (error) alert(error.message);
+    else if (refreshData) refreshData();
+  };
+
+  const handleRejectTeacher = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this pending request?")) return;
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) alert(error.message);
+    else if (refreshData) refreshData();
+  };
+
+  const pendingTeachers = teachers?.filter(t => t.role === 'pending') || [];
+  const activeTeachers = teachers?.filter(t => t.role !== 'pending') || [];
+
+  const filteredTeachers = activeTeachers?.filter(t => {
     if (filter === 'All') return true;
     const att = attendance?.find(a => a.teacher_id === t.id);
     if (filter === 'Present') return !!att;
@@ -518,23 +539,51 @@ export const TeachersView = ({ teachers, attendance }) => {
     return true;
   });
 
-  const handleAddTeacher = async (e) => {
-    e.preventDefault();
-    alert("In this environment, new users must sign up via the Login screen first to create secure authentication credentials. Once they sign up, they will appear in this list and you can assign them classes.");
-    setShowAddModal(false);
-  };
-
   return (
   <div className="space-y-6 animate-in fade-in duration-300">
     <div className="flex justify-between items-start">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Teachers</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage and monitor teacher attendance</p>
+        <p className="text-sm text-slate-500 mt-1">Manage teacher accounts and monitor attendance</p>
       </div>
-      <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-sm font-bold shadow-sm transition">
-        Add Teacher
-      </button>
+      <div className="flex gap-2">
+        <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition">
+          Invite Guide
+        </button>
+      </div>
     </div>
+
+    {pendingTeachers.length > 0 && (
+      <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
+        <div className="p-4 bg-amber-100/50 border-b border-amber-200 flex items-center gap-2">
+          <Clock className="w-5 h-5 text-amber-600" />
+          <h2 className="font-bold text-amber-900">Pending Approvals ({pendingTeachers.length})</h2>
+        </div>
+        <div className="divide-y divide-amber-200/50">
+          {pendingTeachers.map(t => (
+            <div key={t.id} className="p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-amber-700">
+                  {t.full_name?.substring(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="font-bold text-amber-900">{t.full_name}</p>
+                  <p className="text-xs text-amber-700">{t.email}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => handleRejectTeacher(t.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+                <button onClick={() => handleApproveTeacher(t.id)} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
+                  <Check className="w-4 h-4" /> Approve
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
 
     {showAddModal && (
       <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -598,7 +647,7 @@ export const TeachersView = ({ teachers, attendance }) => {
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             <th className="p-4">Teacher</th>
-            <th className="p-4">Subject</th>
+            <th className="p-4">Account Type</th>
             <th className="p-4">Status</th>
             <th className="p-4">Check-in</th>
             <th className="p-4">Lessons</th>
