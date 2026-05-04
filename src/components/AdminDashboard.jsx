@@ -200,13 +200,9 @@ export default function AdminDashboard({ profile }) {
         text: `Invitation email sent to ${newTeacherEmail}. They can click the link in the email to set up their account.` 
       });
       setNewTeacherEmail('');
+      fetchData(); // Refresh list to show the new (pending) teacher
     }
     
-    setCreatingTeacher(false);
-  };
-    setNewTeacherName('');
-    setNewTeacherPassword('');
-    fetchData();
     setCreatingTeacher(false);
   };
 
