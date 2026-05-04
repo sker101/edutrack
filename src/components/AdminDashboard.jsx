@@ -8,44 +8,6 @@ import {
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertsView, CheckInView, LessonsView, TimetableView, TeachersView } from './AdminViews';
 
-const attendanceData = [
-  { name: 'Mon', present: 43, late: 2, absent: 2 },
-  { name: 'Tue', present: 45, late: 1, absent: 1 },
-  { name: 'Wed', present: 41, late: 3, absent: 3 },
-  { name: 'Thu', present: 44, late: 1, absent: 2 },
-  { name: 'Fri', present: 43, late: 2, absent: 2 },
-];
-
-const topTeachers = [
-  { id: 1, name: 'Sarah Mwanga', subject: 'Mathematics', attendance: 98, lessons: 95, trend: 'up' },
-  { id: 2, name: 'John Kimaro', subject: 'English', attendance: 96, lessons: 92, trend: 'up' },
-  { id: 3, name: 'Grace Lyimo', subject: 'Science', attendance: 94, lessons: 90, trend: 'neutral' },
-  { id: 4, name: 'Peter Msangi', subject: 'Kiswahili', attendance: 88, lessons: 85, trend: 'down' },
-  { id: 5, name: 'Mary Njau', subject: 'History', attendance: 92, lessons: 88, trend: 'neutral' },
-];
-
-const todaysSchedule = [
-  { id: 1, time: '07:30 - 08:10', subject: 'Mathematics', details: 'Form 3A • John Mwangi', status: 'Completed' },
-  { id: 2, time: '08:15 - 08:55', subject: 'English', details: 'Form 2B • Grace Kimaro', status: 'Completed' },
-  { id: 3, time: '09:00 - 09:40', subject: 'Physics', details: 'Form 4A • Peter Makonda', status: 'Ongoing' },
-  { id: 4, time: '09:45 - 10:25', subject: 'Chemistry', details: 'Form 3B • Mary Shayo', status: 'Upcoming' },
-  { id: 5, time: '10:30 - 11:10', subject: 'Biology', details: 'Form 2A • David Mwakesege', status: 'Upcoming' },
-];
-
-const recentAlerts = [
-  { id: 1, type: 'critical', title: 'John Mwangi', desc: 'Lesson recorded without biometric check-in', time: 'Today, 09:15', icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100' },
-  { id: 2, type: 'critical', title: 'Grace Kimaro', desc: 'No check-in for scheduled class', time: 'Today, 08:00', icon: UserX, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-100' },
-  { id: 3, type: 'warning', title: 'Peter Makonda', desc: 'Checked in 25 minutes after class start', time: 'Today, 10:25', icon: Clock, color: 'text-amber-500', bg: 'bg-orange-50', border: 'border-orange-100' },
-  { id: 4, type: 'info', title: 'Mary Shayo', desc: 'Lesson record not submitted', time: 'Yesterday, 14:00', icon: FileQuestion, color: 'text-slate-500', bg: 'bg-slate-50', border: 'border-slate-100' },
-];
-
-const recentActivity = [
-  { id: 1, title: 'Anna Mushi', desc: 'Checked in via fingerprint', time: '2 min ago', icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  { id: 2, title: 'James Tarimo', desc: 'Completed Math - Form 2A', time: '15 min ago', icon: Book, color: 'text-teal-600', bg: 'bg-teal-50' },
-  { id: 3, title: 'Sarah Kimaro', desc: 'Substituted for Grace Kimaro - English', time: '45 min ago', icon: CheckCircle2, color: 'text-orange-500', bg: 'bg-orange-50' },
-  { id: 4, title: 'David Mwakesege', desc: 'Checked in via face recognition', time: '1 hour ago', icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-  { id: 5, title: 'Peter Makonda', desc: 'Checked out for the day', time: '2 hours ago', icon: Clock, color: 'text-slate-500', bg: 'bg-slate-50' },
-];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -73,6 +35,10 @@ export default function AdminDashboard({ profile }) {
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [todaysSchedule, setTodaysSchedule] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [topTeachers, setTopTeachers] = useState([]);
+  const [chartData, setChartData] = useState([]);
 
   // Timetable Form State
   const [formTeacher, setFormTeacher] = useState('');
@@ -124,6 +90,69 @@ export default function AdminDashboard({ profile }) {
       .eq('date', today)
       .order('created_at', { ascending: false });
     if (verifiedData) setVerifications(verifiedData);
+
+    // Dynamic Top Teachers
+    const active = profilesData?.filter(p => p.role === 'teacher').map(t => {
+      const isPresent = attendanceData?.some(a => a.teacher_id === t.id);
+      const lessonCount = verifiedData?.filter(v => v.teacher_id === t.id).length || 0;
+      return {
+        id: t.id,
+        name: t.full_name,
+        subject: t.email,
+        attendance: isPresent ? 100 : 0,
+        lessons: lessonCount,
+        trend: lessonCount > 0 ? 'up' : 'neutral'
+      };
+    }).sort((a,b) => b.lessons - a.lessons).slice(0, 5);
+    if (active) setTopTeachers(active);
+
+    // Dynamic Today's Schedule
+    const currentDay = new Date().getDay();
+    const { data: tt } = await supabase.from('timetables').select(`*, classes(name), subjects(name), profiles(full_name)`).eq('day_of_week', currentDay);
+    if (tt) {
+      const schedule = tt.map(t => {
+        const isCompleted = verifiedData?.some(v => v.timetable_id === t.id);
+        return {
+          id: t.id,
+          time: `${t.start_time.substring(0,5)} - ${t.end_time.substring(0,5)}`,
+          subject: t.subjects?.name,
+          details: `${t.classes?.name} • ${t.profiles?.full_name}`,
+          status: isCompleted ? 'Completed' : 'Upcoming'
+        };
+      });
+      setTodaysSchedule(schedule);
+    }
+
+    // Dynamic Recent Activity
+    const activity = [];
+    attendanceData?.slice(0, 5).forEach(a => {
+      activity.push({
+        id: `att-${a.id}`,
+        title: a.profiles?.full_name,
+        desc: 'Checked in for the day',
+        time: new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        icon: UserCheck,
+        color: 'text-emerald-500',
+        bg: 'bg-emerald-50'
+      });
+    });
+    verifiedData?.slice(0, 5).forEach(v => {
+      activity.push({
+        id: `ver-${v.id}`,
+        title: v.profiles?.full_name,
+        desc: `Completed ${v.timetables?.subjects?.name} - ${v.timetables?.classes?.name}`,
+        time: new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        icon: Book,
+        color: 'text-teal-600',
+        bg: 'bg-teal-50'
+      });
+    });
+    setRecentActivity(activity.sort((a,b) => b.time.localeCompare(a.time)).slice(0, 5));
+
+    // Chart Data
+    setChartData([
+      { name: 'Today', present: attendanceData?.length || 0, late: 0, absent: (profilesData?.length || 0) - (attendanceData?.length || 0) }
+    ]);
   }
 
   const handleAssignTimetable = async (e) => {
@@ -233,9 +262,13 @@ export default function AdminDashboard({ profile }) {
           </div>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-bold text-slate-900">{attendance.length}</p>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+5%</span>
+            {teachers.length > 0 && (
+              <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                {Math.round((attendance.length / teachers.length) * 100)}%
+              </span>
+            )}
           </div>
-          <p className="text-xs text-slate-500 mt-1">89% attendance</p>
+          <p className="text-xs text-slate-500 mt-1">Live check-ins</p>
           <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-emerald-50/50 to-transparent rounded-bl-full pointer-events-none"></div>
         </div>
 
@@ -264,10 +297,11 @@ export default function AdminDashboard({ profile }) {
             <div className="p-2 bg-emerald-50 rounded-lg"><TrendingUp className="w-4 h-4 text-emerald-500" /></div>
           </div>
           <div className="flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-slate-900">93%</p>
-            <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">+3%</span>
+            <p className="text-3xl font-bold text-slate-900">
+              {todaysSchedule.length > 0 ? Math.round((verifications.length / todaysSchedule.length) * 100) : 0}%
+            </p>
           </div>
-          <p className="text-xs text-slate-500 mt-1">This week</p>
+          <p className="text-xs text-slate-500 mt-1">Today's progress</p>
           <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-emerald-50/50 to-transparent rounded-bl-full pointer-events-none"></div>
         </div>
 
@@ -276,8 +310,10 @@ export default function AdminDashboard({ profile }) {
             <p className="text-slate-500 text-sm font-medium">Active<br/>Alerts</p>
             <div className="p-2 bg-orange-50 rounded-lg"><Clock className="w-4 h-4 text-orange-500" /></div>
           </div>
-          <p className="text-3xl font-bold text-slate-900">4</p>
-          <p className="text-xs text-slate-500 mt-1">Need attention</p>
+          <p className="text-3xl font-bold text-slate-900">
+            {teachers.length - attendance.length}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">Outstanding</p>
         </div>
       </div>
 
@@ -290,13 +326,12 @@ export default function AdminDashboard({ profile }) {
             <p className="text-sm text-slate-500 mb-6">Teacher attendance this week</p>
             <div className="h-[250px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={attendanceData} barGap={0}>
+                <BarChart data={chartData}>
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} ticks={[0, 15, 30, 45, 60]} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dx={-10} />
                   <Tooltip content={<CustomTooltip />} cursor={{fill: '#f1f5f9'}} />
-                  <Bar dataKey="present" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                  <Bar dataKey="late" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={20} />
-                  <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                  <Bar dataKey="present" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="absent" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -313,25 +348,26 @@ export default function AdminDashboard({ profile }) {
             <p className="text-sm text-slate-500 mb-6">Top performing teachers this month</p>
             
             <div className="space-y-2">
+              {topTeachers.length === 0 && <p className="text-sm text-slate-500 text-center py-8">No teacher activity recorded yet.</p>}
               {topTeachers.map((t, idx) => (
                 <div key={t.id} className="flex items-center justify-between group p-3 hover:bg-slate-50 rounded-xl transition-colors border border-transparent hover:border-slate-100">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-sm">
-                      {t.id}
+                      {idx + 1}
                     </div>
                     <div>
                       <p className="font-semibold text-sm text-slate-900">{t.name}</p>
-                      <p className="text-xs text-slate-500">{t.subject}</p>
+                      <p className="text-[10px] text-slate-500 truncate max-w-[120px]">{t.subject}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-8 text-right">
                     <div>
                       <p className="font-semibold text-sm text-slate-900">{t.attendance}%</p>
-                      <p className="text-xs text-slate-500">Attendance</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-tighter">Att.</p>
                     </div>
                     <div>
-                      <p className="font-semibold text-sm text-slate-900">{t.lessons}%</p>
-                      <p className="text-xs text-slate-500">Lessons</p>
+                      <p className="font-semibold text-sm text-slate-900">{t.lessons}</p>
+                      <p className="text-[10px] text-slate-500 uppercase tracking-tighter">Done</p>
                     </div>
                     <div className="w-8 flex justify-end">
                       {t.trend === 'up' && <div className="w-7 h-7 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center"><TrendingUp className="w-4 h-4" /></div>}
@@ -347,9 +383,10 @@ export default function AdminDashboard({ profile }) {
           {/* Today's Schedule */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <h2 className="text-lg font-bold text-slate-900">Today's Schedule</h2>
-            <p className="text-sm text-slate-500 mb-6">Wednesday, 29 April</p>
+            <p className="text-sm text-slate-500 mb-6">{new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             
             <div className="space-y-0">
+              {todaysSchedule.length === 0 && <p className="text-sm text-slate-500 text-center py-8">No lessons assigned for today.</p>}
               {todaysSchedule.map((s, idx) => (
                 <div key={s.id} className={`flex items-center gap-6 p-4 ${idx !== todaysSchedule.length - 1 ? 'border-b border-slate-100' : ''}`}>
                   <div className="w-24">
@@ -389,15 +426,17 @@ export default function AdminDashboard({ profile }) {
                 <div className="flex items-center gap-2 mb-2 text-emerald-600">
                   <Book className="w-4 h-4" /> <span className="text-xs font-semibold">Completion</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">93%</p>
-                <p className="text-xs text-slate-500 mt-1">156/168 lessons</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {todaysSchedule.length > 0 ? Math.round((verifications.length / todaysSchedule.length) * 100) : 0}%
+                </p>
+                <p className="text-xs text-slate-500 mt-1">{verifications.length}/{todaysSchedule.length} lessons</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-2 mb-2 text-orange-500">
                   <Clock className="w-4 h-4" /> <span className="text-xs font-semibold">Substitutions</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">3</p>
-                <p className="text-xs text-slate-500 mt-1">Pending today</p>
+                <p className="text-2xl font-bold text-slate-900">0</p>
+                <p className="text-xs text-slate-500 mt-1">None reported</p>
               </div>
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-100">
                 <div className="flex items-center gap-2 mb-2 text-slate-600">
@@ -420,18 +459,7 @@ export default function AdminDashboard({ profile }) {
             </div>
             
             <div className="space-y-3">
-              {recentAlerts.map(alert => (
-                <div key={alert.id} className={`p-4 rounded-xl border ${alert.border} ${alert.bg} flex gap-3 items-start`}>
-                  <div className={`mt-0.5 ${alert.color}`}>
-                    <alert.icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">{alert.desc}</p>
-                    <p className="text-[11px] text-slate-400 mt-1.5">{alert.time}</p>
-                  </div>
-                </div>
-              ))}
+              <p className="text-xs text-slate-500 text-center py-8 italic">No alerts detected in current logs.</p>
             </div>
           </div>
 
@@ -441,6 +469,7 @@ export default function AdminDashboard({ profile }) {
             <p className="text-sm text-slate-500 mb-6">Latest check-ins and lessons</p>
             
             <div className="space-y-5">
+              {recentActivity.length === 0 && <p className="text-xs text-slate-500 text-center py-8">Waiting for school activity...</p>}
               {recentActivity.map((activity, idx) => (
                 <div key={activity.id} className="flex gap-4">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${activity.bg} ${activity.color}`}>
