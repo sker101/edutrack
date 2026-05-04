@@ -750,7 +750,7 @@ export default function AdminDashboard({ profile }) {
           {activeMenu === 'Timetable' && <TimetableView />}
           {activeMenu === 'Setup' && renderSetup()}
           {activeMenu === 'Check-In' && <CheckInView attendance={attendance} profile={profile} refreshData={fetchData} />}
-          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} profile={profile} refreshData={fetchData} />}
+          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} teachers={teachers} profile={profile} refreshData={fetchData} />}
           {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
           {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} refreshData={fetchData} />}
           {activeMenu === 'Reports' && (
