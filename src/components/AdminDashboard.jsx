@@ -585,6 +585,27 @@ export default function AdminDashboard({ profile }) {
           </div>
         </div>
       </div>
+
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+          <Clock className="w-6 h-6 text-emerald-600" /> Institution Schedule
+        </h2>
+        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl mb-4">
+          <p className="text-xs text-emerald-800 font-bold mb-1 uppercase tracking-wider">Required Database Table</p>
+          <p className="text-[11px] text-emerald-700 leading-relaxed mb-2">
+            To customize your school's periods, run this SQL in your Supabase SQL Editor:
+          </p>
+          <pre className="bg-white p-2 rounded border border-emerald-200 text-[10px] text-slate-700 overflow-x-auto">
+            {`CREATE TABLE time_slots (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  start_time time NOT NULL UNIQUE
+);`}
+          </pre>
+        </div>
+        <p className="text-sm text-slate-500">
+          Once the table is created, you can add and remove time slots directly from the <strong>Timetable</strong> tab using the "Add Period" button.
+        </p>
+      </div>
     </div>
   );
 

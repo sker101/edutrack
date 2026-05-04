@@ -334,28 +334,34 @@ export const TimetableView = () => {
   const [editSubject, setEditSubject] = useState('');
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
+  const [timeSlots, setTimeSlots] = useState(['07:30','08:15','09:00','09:45','10:30','11:15','12:00','13:00','13:45','14:30']);
   const [loading, setLoading] = useState(false);
+  const [showAddSlotModal, setShowAddSlotModal] = useState(false);
+  const [newSlotTime, setNewSlotTime] = useState('');
 
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const todayNum = new Date().getDay();
   const [currentDay, setCurrentDay] = useState(todayNum === 0 || todayNum === 6 ? 1 : todayNum);
 
   const fetchAll = useCallback(async () => {
-    const [{ data: tt }, { data: cls }, { data: sub }, { data: prof }] = await Promise.all([
+    const [{ data: tt }, { data: cls }, { data: sub }, { data: prof }, { data: ts }] = await Promise.all([
       supabase.from('timetables').select(`*, classes(id, name), subjects(id, name), profiles(id, full_name)`).eq('day_of_week', currentDay),
       supabase.from('classes').select('*').order('name'),
       supabase.from('subjects').select('*').order('name'),
       supabase.from('profiles').select('id, full_name').order('full_name'),
+      supabase.from('time_slots').select('*').order('start_time'),
     ]);
     if (tt) setTimetables(tt);
     if (cls) setClasses(cls);
     if (sub) setSubjects(sub);
     if (prof) setTeachers(prof);
+    if (ts && ts.length > 0) {
+      setTimeSlots(ts.map(s => s.start_time.substring(0, 5)));
+    }
   }, [currentDay]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const timeSlots = ['07:30','08:15','09:00','09:45','10:30','11:15','12:00','13:00','13:45','14:30'];
 
   const getSlot = (classId, time) =>
     timetables.find(t => t.class_id === classId && t.start_time?.substring(0,5) === time);
@@ -369,17 +375,43 @@ export const TimetableView = () => {
     setShowEditModal(true);
   };
 
+  const openAdd = (classId, time) => {
+    setSelectedSlot({ class_id: classId, isNew: true });
+    setEditTeacher('');
+    setEditSubject('');
+    setEditStart(time);
+    
+    // Default end time is 45 mins later
+    const [h, m] = time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(h, m + 45);
+    setEditEnd(date.toTimeString().substring(0, 5));
+    
+    setShowEditModal(true);
+  };
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from('timetables').update({
+    
+    const payload = {
       teacher_id: editTeacher,
       subject_id: editSubject,
       start_time: editStart,
       end_time: editEnd,
-    }).eq('id', selectedSlot.id);
+      day_of_week: currentDay,
+      class_id: selectedSlot.class_id
+    };
+
+    let result;
+    if (selectedSlot.isNew) {
+      result = await supabase.from('timetables').insert([payload]);
+    } else {
+      result = await supabase.from('timetables').update(payload).eq('id', selectedSlot.id);
+    }
+
     setLoading(false);
-    if (error) { alert('Error: ' + error.message); return; }
+    if (result.error) { alert('Error: ' + result.error.message); return; }
     setShowEditModal(false);
     fetchAll();
   };
@@ -401,17 +433,55 @@ export const TimetableView = () => {
           <p className="text-sm text-slate-500 mt-1">Click any slot to edit or remove it</p>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowAddSlotModal(true)} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition mr-2">
+            Add Period
+          </button>
           <button onClick={() => setCurrentDay(d => d === 1 ? 5 : d - 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-5 h-5" /></button>
           <div className="px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium text-sm min-w-[120px] text-center">{dayNames[currentDay]}</div>
           <button onClick={() => setCurrentDay(d => d === 5 ? 1 : d + 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronRight className="w-5 h-5" /></button>
         </div>
       </div>
 
+      {showAddSlotModal && (
+        <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="font-bold text-lg text-slate-900">Add Time Slot</h3>
+              <button onClick={() => setShowAddSlotModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500">Add a new period row to the timetable (e.g. 10:45)</p>
+              <input type="time" value={newSlotTime} onChange={e => setNewSlotTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900" />
+              <button 
+                onClick={async () => {
+                  if (!newSlotTime) return;
+                  const { error } = await supabase.from('time_slots').insert([{ start_time: newSlotTime }]);
+                  if (error) {
+                    if (error.code === '42P01') {
+                      alert("Database table 'time_slots' missing. Please ask Admin to create it.");
+                    } else {
+                      alert(error.message);
+                    }
+                  } else {
+                    setNewSlotTime('');
+                    setShowAddSlotModal(false);
+                    fetchAll();
+                  }
+                }}
+                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition shadow-sm"
+              >
+                Add Row
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showEditModal && selectedSlot && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-slate-900">Edit Timetable Slot</h3>
+              <h3 className="font-bold text-lg text-slate-900">{selectedSlot.isNew ? 'Assign New Lesson' : 'Edit Timetable Slot'}</h3>
               <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
@@ -440,11 +510,13 @@ export const TimetableView = () => {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={handleDelete} disabled={loading} className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2">
-                  <Trash2 className="w-4 h-4" /> Delete Slot
-                </button>
-                <button type="submit" disabled={loading} className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm transition">
-                  {loading ? 'Saving...' : 'Save Changes'}
+                {!selectedSlot.isNew && (
+                  <button type="button" onClick={handleDelete} disabled={loading} className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2">
+                    <Trash2 className="w-4 h-4" /> Delete Slot
+                  </button>
+                )}
+                <button type="submit" disabled={loading} className={`${selectedSlot.isNew ? 'w-full' : 'flex-1'} py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm transition shadow-sm`}>
+                  {loading ? 'Saving...' : selectedSlot.isNew ? 'Create Assignment' : 'Save Changes'}
                 </button>
               </div>
             </form>
@@ -473,7 +545,10 @@ export const TimetableView = () => {
                     const slot = getSlot(cls.id, time);
                     if (!slot) return (
                       <td key={cls.id} className="p-1.5">
-                        <div className="h-14 rounded-xl border border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors cursor-pointer flex items-center justify-center">
+                        <div 
+                          onClick={() => openAdd(cls.id, time)}
+                          className="h-14 rounded-xl border border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors cursor-pointer flex items-center justify-center"
+                        >
                           <PlusCircle className="w-4 h-4 text-slate-300" />
                         </div>
                       </td>
