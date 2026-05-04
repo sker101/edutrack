@@ -338,6 +338,8 @@ export const TimetableView = () => {
   const [loading, setLoading] = useState(false);
   const [showAddSlotModal, setShowAddSlotModal] = useState(false);
   const [newSlotTime, setNewSlotTime] = useState('');
+  const [editingSlotId, setEditingSlotId] = useState(null);
+  const [rawTimeSlots, setRawTimeSlots] = useState([]);
 
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const todayNum = new Date().getDay();
@@ -356,7 +358,11 @@ export const TimetableView = () => {
     if (sub) setSubjects(sub);
     if (prof) setTeachers(prof);
     if (ts && ts.length > 0) {
+      setRawTimeSlots(ts);
       setTimeSlots(ts.map(s => s.start_time.substring(0, 5)));
+    } else {
+      setRawTimeSlots([]);
+      setTimeSlots(['07:30','08:15','09:00','09:45','10:30','11:15','12:00','13:00','13:45','14:30']);
     }
   }, [currentDay]);
 
@@ -427,18 +433,18 @@ export const TimetableView = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-start flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Timetable</h1>
-          <p className="text-sm text-slate-500 mt-1">Click any slot to edit or remove it</p>
+      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
+        <div className="flex items-center gap-4">
+          <button onClick={() => { setEditingSlotId(null); setNewSlotTime(''); setShowAddSlotModal(true); }} className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 transition">
+            <PlusCircle className="w-4 h-4" /> Add New Period
+          </button>
+          <span className="text-xs text-slate-400 font-medium">|</span>
+          <p className="text-xs text-slate-500 max-w-[200px]">Click any time on the left to edit or delete a period row.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowAddSlotModal(true)} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-slate-800 transition mr-2">
-            Add Period
-          </button>
-          <button onClick={() => setCurrentDay(d => d === 1 ? 5 : d - 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronLeft className="w-5 h-5" /></button>
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-lg font-medium text-sm min-w-[120px] text-center">{dayNames[currentDay]}</div>
-          <button onClick={() => setCurrentDay(d => d === 5 ? 1 : d + 1)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"><ChevronRight className="w-5 h-5" /></button>
+          <button onClick={() => setCurrentDay(d => d === 1 ? 5 : d - 1)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition"><ChevronLeft className="w-5 h-5" /></button>
+          <div className="px-6 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm min-w-[140px] text-center text-slate-700">{dayNames[currentDay]}</div>
+          <button onClick={() => setCurrentDay(d => d === 5 ? 1 : d + 1)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition"><ChevronRight className="w-5 h-5" /></button>
         </div>
       </div>
 
@@ -446,32 +452,55 @@ export const TimetableView = () => {
         <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-slate-900">Add Time Slot</h3>
+              <h3 className="font-bold text-lg text-slate-900">{editingSlotId ? 'Edit Period Time' : 'Add Time Slot'}</h3>
               <button onClick={() => setShowAddSlotModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-500">Add a new period row to the timetable (e.g. 10:45)</p>
+              <p className="text-sm text-slate-500">
+                {editingSlotId ? 'Change the start time for this period row.' : 'Add a new period row to the timetable (e.g. 19:30 for night sessions).'}
+              </p>
               <input type="time" value={newSlotTime} onChange={e => setNewSlotTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900" />
-              <button 
-                onClick={async () => {
-                  if (!newSlotTime) return;
-                  const { error } = await supabase.from('time_slots').insert([{ start_time: newSlotTime }]);
-                  if (error) {
-                    if (error.code === '42P01') {
-                      alert("Database table 'time_slots' missing. Please ask Admin to create it.");
+              
+              <div className="flex gap-3">
+                {editingSlotId && (
+                  <button 
+                    onClick={async () => {
+                      if (!window.confirm("Delete this entire period row? This will also remove any lessons assigned to this time.")) return;
+                      await supabase.from('time_slots').delete().eq('id', editingSlotId);
+                      setShowAddSlotModal(false);
+                      fetchAll();
+                    }}
+                    className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition border border-red-100"
+                  >
+                    Delete
+                  </button>
+                )}
+                <button 
+                  onClick={async () => {
+                    if (!newSlotTime) return;
+                    let error;
+                    if (editingSlotId) {
+                      const res = await supabase.from('time_slots').update({ start_time: newSlotTime }).eq('id', editingSlotId);
+                      error = res.error;
                     } else {
-                      alert(error.message);
+                      const res = await supabase.from('time_slots').insert([{ start_time: newSlotTime }]);
+                      error = res.error;
                     }
-                  } else {
-                    setNewSlotTime('');
-                    setShowAddSlotModal(false);
-                    fetchAll();
-                  }
-                }}
-                className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition shadow-sm"
-              >
-                Add Row
-              </button>
+                    
+                    if (error) {
+                      if (error.code === '42P01') alert("Table 'time_slots' missing. Check Setup tab for SQL.");
+                      else alert(error.message);
+                    } else {
+                      setNewSlotTime('');
+                      setShowAddSlotModal(false);
+                      fetchAll();
+                    }
+                  }}
+                  className="flex-[2] py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition shadow-sm"
+                >
+                  {editingSlotId ? 'Save' : 'Add Period'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -540,7 +569,24 @@ export const TimetableView = () => {
             <tbody className="divide-y divide-slate-100">
               {timeSlots.map((time, i) => (
                 <tr key={i} className="hover:bg-slate-50/50">
-                  <td className="p-3 font-medium text-slate-500 text-xs align-top pt-4 sticky left-0 bg-white">{time}</td>
+                  <td className="p-3 sticky left-0 bg-white z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
+                    <button 
+                      onClick={() => {
+                        const raw = rawTimeSlots.find(s => s.start_time.substring(0,5) === time);
+                        if (raw) {
+                          setEditingSlotId(raw.id);
+                          setNewSlotTime(time);
+                          setShowAddSlotModal(true);
+                        } else {
+                          alert("This is a default period. To edit it, first add it as a new period using the 'Add New Period' button.");
+                        }
+                      }}
+                      className="font-bold text-slate-900 text-xs py-1 px-2 hover:bg-slate-100 rounded-lg transition-colors flex flex-col items-center gap-0.5"
+                    >
+                      <span className="text-[10px] text-slate-400 font-normal uppercase">Start</span>
+                      {time}
+                    </button>
+                  </td>
                   {classes.map(cls => {
                     const slot = getSlot(cls.id, time);
                     if (!slot) return (
