@@ -599,17 +599,44 @@ export const TimetableView = () => {
                         </div>
                       </td>
                     );
+                    const isCompleted = verifications?.some(v => v.timetable_id === slot.id);
+                    const now = new Date();
+                    const [sh, sm] = slot.start_time.split(':').map(Number);
+                    const [eh, em] = slot.end_time.split(':').map(Number);
+                    const startMin = sh * 60 + sm;
+                    const endMin = eh * 60 + em;
+                    const nowMin = now.getHours() * 60 + now.getMinutes();
+                    const isOngoing = nowMin >= startMin && nowMin <= endMin;
+
+                    const statusClass = isCompleted 
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
+                      : isOngoing 
+                      ? "bg-teal-50 border-teal-200 text-teal-800" 
+                      : "bg-white border-slate-200 text-slate-700";
+
                     return (
-                      <td key={cls.id} className="p-1.5">
-                        <div
+                      <td key={cls.id} className="p-1.5 min-w-[130px]">
+                        <div 
                           onClick={() => openEdit(slot)}
-                          className="p-2 rounded-xl border border-teal-100 bg-teal-50 min-h-[3.5rem] flex flex-col justify-center cursor-pointer hover:shadow-md hover:border-teal-300 transition-all group"
+                          className={`h-14 p-2 rounded-xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between group ${statusClass} hover:shadow-md hover:scale-[1.02]`}
                         >
                           <div className="flex justify-between items-start">
-                            <span className="text-xs font-bold text-teal-700 leading-tight">{slot.subjects?.name || '—'}</span>
-                            <MoreHorizontal className="w-3 h-3 text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                            <p className="text-[10px] font-black uppercase tracking-tight truncate leading-tight flex-1">
+                              {slot.subjects?.name}
+                            </p>
+                            {isCompleted ? (
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                            ) : isOngoing ? (
+                              <Clock className="w-3 h-3 text-teal-500 shrink-0" />
+                            ) : (
+                              <Clock className="w-3 h-3 text-slate-300 shrink-0" />
+                            )}
                           </div>
-                          <span className="text-xs text-slate-500 mt-0.5 truncate">{slot.profiles?.full_name?.split(' ')[0] || '—'}</span>
+                          <p className="text-[9px] font-medium opacity-60 truncate">
+                            {slot.profiles?.full_name ? (
+                              slot.profiles.full_name.split(' ').map((n, idx, arr) => idx === arr.length - 1 ? n : n[0] + '.').join(' ')
+                            ) : 'No teacher'}
+                          </p>
                         </div>
                       </td>
                     );
