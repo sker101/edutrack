@@ -12,20 +12,20 @@ export const AlertsView = ({ alerts }) => (
       <p className="text-sm text-slate-500 mt-1">Review and resolve attendance inconsistencies</p>
     </div>
 
-    <div className="flex gap-4 overflow-x-auto pb-2">
-      <div className="bg-white p-5 rounded-xl border border-slate-200 min-w-[200px] flex-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pb-2">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
         <p className="text-3xl font-bold text-slate-900">{alerts ? alerts.length : 0}</p>
         <p className="text-sm font-medium text-slate-500 mt-1">Total Alerts</p>
       </div>
-      <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 min-w-[200px] flex-1">
+      <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 flex flex-col justify-center">
         <p className="text-3xl font-bold text-orange-600">0</p>
         <p className="text-sm font-medium text-orange-700 mt-1">Unresolved</p>
       </div>
-      <div className="bg-red-50 p-5 rounded-xl border border-red-100 min-w-[200px] flex-1">
+      <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
         <p className="text-3xl font-bold text-red-600">0</p>
         <p className="text-sm font-medium text-red-700 mt-1">Critical</p>
       </div>
-      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 min-w-[200px] flex-1">
+      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
         <p className="text-3xl font-bold text-emerald-600">0</p>
         <p className="text-sm font-medium text-emerald-700 mt-1">Resolved</p>
       </div>
@@ -107,7 +107,7 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
         <p className="text-sm text-slate-500 mt-1">Verify your attendance by confirming your location at school</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
           <div className="p-6 border-b border-slate-100 font-bold text-lg text-slate-800">Attendance Verification</div>
           <div className="p-6 flex-1 flex flex-col justify-center items-center">
@@ -139,7 +139,6 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
                 <UserCheck className="w-5 h-5" /> I'm at School - Fingerprint
               </button>
             </div>
-            <p className="text-xs text-slate-400 mt-4 text-center">Your location will be used to verify you are within school premises</p>
           </div>
         </div>
 
@@ -148,7 +147,6 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
               <div>
                 <h3 className="font-bold text-lg text-slate-800">Recent Check-ins</h3>
-                <p className="text-xs text-slate-500">Today's arrivals</p>
               </div>
               <span className="flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
                 <span className="relative flex h-2.5 w-2.5">
@@ -180,14 +178,6 @@ export const CheckInView = ({ attendance, profile, refreshData }) => {
                 <div className="p-4 text-center text-slate-500 text-sm">No check-ins today.</div>
               )}
             </div>
-          </div>
-          
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-6">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-bold text-emerald-800">{attendance ? attendance.length : 0} Teachers Checked In</h3>
-            </div>
-            <p className="text-sm text-emerald-700">Today's verified arrivals</p>
           </div>
         </div>
       </div>
@@ -301,34 +291,22 @@ export const LessonsView = ({ verifications, teachers, profile, refreshData }) =
       )}
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-slate-900">{verifications ? verifications.length : 0}</p>
-          <BookOpen className="w-5 h-5 text-slate-400" />
-        </div>
-        <p className="text-sm font-medium text-slate-500">Total</p>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center shadow-sm">
+        <p className="text-2xl sm:text-3xl font-bold text-slate-900">{verifications ? verifications.length : 0}</p>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">Total Verified</p>
       </div>
-      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-emerald-600">{verifications ? verifications.length : 0}</p>
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-        </div>
-        <p className="text-sm font-medium text-emerald-700">Verified</p>
+      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center shadow-sm">
+        <p className="text-2xl sm:text-3xl font-bold text-emerald-600">{verifications ? verifications.length : 0}</p>
+        <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mt-1">Approved</p>
       </div>
-      <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 flex flex-col justify-center">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-orange-600">0</p>
-          <Clock className="w-5 h-5 text-orange-500" />
-        </div>
-        <p className="text-sm font-medium text-orange-700">Pending</p>
+      <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 flex flex-col justify-center shadow-sm">
+        <p className="text-2xl sm:text-3xl font-bold text-orange-600">0</p>
+        <p className="text-xs font-semibold text-orange-700 uppercase tracking-wider mt-1">Pending</p>
       </div>
-      <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
-        <div className="flex justify-between items-start mb-2">
-          <p className="text-3xl font-bold text-red-600">0</p>
-          <AlertTriangle className="w-5 h-5 text-red-500" />
-        </div>
-        <p className="text-sm font-medium text-red-700">Flagged</p>
+      <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center shadow-sm">
+        <p className="text-2xl sm:text-3xl font-bold text-red-600">0</p>
+        <p className="text-xs font-semibold text-red-700 uppercase tracking-wider mt-1">Flagged</p>
       </div>
     </div>
 
@@ -337,7 +315,7 @@ export const LessonsView = ({ verifications, teachers, profile, refreshData }) =
         <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input type="text" placeholder="Search lessons..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
       </div>
-      <div className="flex items-center gap-2 overflow-x-auto">
+      <div className="flex items-center gap-2 overflow-x-auto w-full">
         {['All', 'Verified', 'Pending', 'Flagged'].map((filter, i) => (
           <button key={i} className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${i === 0 ? 'bg-teal-700 text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}>
             {filter}
@@ -442,7 +420,6 @@ export const TimetableView = () => {
     setEditSubject('');
     setEditStart(time);
     
-    // Default end time is 45 mins later
     const [h, m] = time.split(':').map(Number);
     const date = new Date();
     date.setHours(h, m + 45);
@@ -488,19 +465,22 @@ export const TimetableView = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
+      <div className="flex flex-col md:flex-row justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm mb-6">
         <div className="flex items-center gap-4">
           <button onClick={() => { setEditingSlotId(null); setNewSlotTime(''); setShowAddSlotModal(true); }} className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-sm font-bold shadow-sm flex items-center gap-2 transition">
-            <PlusCircle className="w-4 h-4" /> Add New Period
+            <PlusCircle className="w-4 h-4" /> Add Period
           </button>
-          <span className="text-xs text-slate-400 font-medium">|</span>
-          <p className="text-xs text-slate-500 max-w-[200px]">Click any time on the left to edit or delete a period row.</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setCurrentDay(d => d === 1 ? 5 : d - 1)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition"><ChevronLeft className="w-5 h-5" /></button>
-          <div className="px-6 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm min-w-[140px] text-center text-slate-700">{dayNames[currentDay]}</div>
+          <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold text-sm min-w-[100px] text-center text-slate-700">{dayNames[currentDay]}</div>
           <button onClick={() => setCurrentDay(d => d === 5 ? 1 : d + 1)} className="p-2 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition"><ChevronRight className="w-5 h-5" /></button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-slate-400 lg:hidden px-1 animate-pulse">
+        <MoreHorizontal className="w-4 h-4" />
+        <span>Scroll horizontally to view all classes</span>
       </div>
 
       {showAddSlotModal && (
@@ -511,26 +491,8 @@ export const TimetableView = () => {
               <button onClick={() => setShowAddSlotModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-500">
-                {editingSlotId ? 'Change the start time for this period row.' : 'Add a new period row to the timetable (e.g. 19:30 for night sessions).'}
-              </p>
               <input type="time" value={newSlotTime} onChange={e => setNewSlotTime(e.target.value)} className="w-full p-3 border border-slate-300 rounded-xl bg-slate-50 font-bold text-slate-900" />
-              
-              <div className="flex gap-3">
-                {editingSlotId && (
-                  <button 
-                    onClick={async () => {
-                      if (!window.confirm("Delete this entire period row? This will also remove any lessons assigned to this time.")) return;
-                      await supabase.from('time_slots').delete().eq('id', editingSlotId);
-                      setShowAddSlotModal(false);
-                      fetchAll();
-                    }}
-                    className="flex-1 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition border border-red-100"
-                  >
-                    Delete
-                  </button>
-                )}
-                <button 
+              <button 
                   onClick={async () => {
                     if (!newSlotTime) return;
                     let error;
@@ -541,21 +503,16 @@ export const TimetableView = () => {
                       const res = await supabase.from('time_slots').insert([{ start_time: newSlotTime }]);
                       error = res.error;
                     }
-                    
-                    if (error) {
-                      if (error.code === '42P01') alert("Table 'time_slots' missing. Check Setup tab for SQL.");
-                      else alert(error.message);
-                    } else {
+                    if (error) { alert(error.message); } else {
                       setNewSlotTime('');
                       setShowAddSlotModal(false);
                       fetchAll();
                     }
                   }}
-                  className="flex-[2] py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition shadow-sm"
+                  className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold transition shadow-sm"
                 >
-                  {editingSlotId ? 'Save' : 'Add Period'}
+                  Save Changes
                 </button>
-              </div>
             </div>
           </div>
         </div>
@@ -565,7 +522,7 @@ export const TimetableView = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-lg text-slate-900">{selectedSlot.isNew ? 'Assign New Lesson' : 'Edit Timetable Slot'}</h3>
+              <h3 className="font-bold text-lg text-slate-900">{selectedSlot.isNew ? 'Assign New Lesson' : 'Edit Slot'}</h3>
               <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
@@ -596,11 +553,11 @@ export const TimetableView = () => {
               <div className="flex gap-3 pt-2">
                 {!selectedSlot.isNew && (
                   <button type="button" onClick={handleDelete} disabled={loading} className="flex-1 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold text-sm transition flex items-center justify-center gap-2">
-                    <Trash2 className="w-4 h-4" /> Delete Slot
+                    <Trash2 className="w-4 h-4" /> Delete
                   </button>
                 )}
                 <button type="submit" disabled={loading} className={`${selectedSlot.isNew ? 'w-full' : 'flex-1'} py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-sm transition shadow-sm`}>
-                  {loading ? 'Saving...' : selectedSlot.isNew ? 'Create Assignment' : 'Save Changes'}
+                  {loading ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </form>
@@ -609,89 +566,35 @@ export const TimetableView = () => {
       )}
 
       {classes.length === 0 ? (
-        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">
-          No classes set up yet. Go to <strong>Setup</strong> to add classes and subjects first.
-        </div>
+        <div className="p-8 text-center text-slate-500 bg-slate-50 border border-dashed border-slate-200 rounded-xl">No classes set up yet.</div>
       ) : (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-sm">
           <table className="w-full text-left border-collapse" style={{minWidth: `${classes.length * 140 + 80}px`}}>
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-600">
+              <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 <th className="p-4 w-20 sticky left-0 bg-slate-50 z-10">Time</th>
-                {classes.map(c => <th key={c.id} className="p-4 text-center whitespace-nowrap">{c.name}</th>)}
+                {classes.map(c => <th key={c.id} className="p-4 text-center">{c.name}</th>)}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {timeSlots.map((time, i) => (
                 <tr key={i} className="hover:bg-slate-50/50">
                   <td className="p-3 sticky left-0 bg-white z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                    <button 
-                      onClick={() => {
+                    <button onClick={() => {
                         const raw = rawTimeSlots.find(s => s.start_time.substring(0,5) === time);
-                        if (raw) {
-                          setEditingSlotId(raw.id);
-                          setNewSlotTime(time);
-                          setShowAddSlotModal(true);
-                        } else {
-                          alert("This is a default period. To edit it, first add it as a new period using the 'Add New Period' button.");
-                        }
-                      }}
-                      className="font-bold text-slate-900 text-xs py-1 px-2 hover:bg-slate-100 rounded-lg transition-colors flex flex-col items-center gap-0.5"
-                    >
-                      <span className="text-[10px] text-slate-400 font-normal uppercase">Start</span>
-                      {time}
-                    </button>
+                        if (raw) { setEditingSlotId(raw.id); setNewSlotTime(time); setShowAddSlotModal(true); }
+                      }} className="font-bold text-slate-900 text-xs py-1 px-2">{time}</button>
                   </td>
                   {classes.map(cls => {
                     const slot = getSlot(cls.id, time);
                     if (!slot) return (
-                      <td key={cls.id} className="p-1.5">
-                        <div 
-                          onClick={() => openAdd(cls.id, time)}
-                          className="h-14 rounded-xl border border-dashed border-slate-200 hover:border-teal-300 hover:bg-teal-50/30 transition-colors cursor-pointer flex items-center justify-center"
-                        >
-                          <PlusCircle className="w-4 h-4 text-slate-300" />
-                        </div>
-                      </td>
+                      <td key={cls.id} className="p-1.5"><div onClick={() => openAdd(cls.id, time)} className="h-14 rounded-xl border border-dashed border-slate-200 hover:border-teal-300 cursor-pointer flex items-center justify-center"><PlusCircle className="w-4 h-4 text-slate-300" /></div></td>
                     );
-                    const isCompleted = verifications?.some(v => v.timetable_id === slot.id);
-                    const now = new Date();
-                    const [sh, sm] = slot.start_time.split(':').map(Number);
-                    const [eh, em] = slot.end_time.split(':').map(Number);
-                    const startMin = sh * 60 + sm;
-                    const endMin = eh * 60 + em;
-                    const nowMin = now.getHours() * 60 + now.getMinutes();
-                    const isOngoing = nowMin >= startMin && nowMin <= endMin;
-
-                    const statusClass = isCompleted 
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
-                      : isOngoing 
-                      ? "bg-teal-50 border-teal-200 text-teal-800" 
-                      : "bg-white border-slate-200 text-slate-700";
-
                     return (
                       <td key={cls.id} className="p-1.5 min-w-[130px]">
-                        <div 
-                          onClick={() => openEdit(slot)}
-                          className={`h-14 p-2 rounded-xl border transition-all cursor-pointer shadow-sm flex flex-col justify-between group ${statusClass} hover:shadow-md hover:scale-[1.02]`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <p className="text-[10px] font-black uppercase tracking-tight truncate leading-tight flex-1">
-                              {slot.subjects?.name}
-                            </p>
-                            {isCompleted ? (
-                              <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
-                            ) : isOngoing ? (
-                              <Clock className="w-3 h-3 text-teal-500 shrink-0" />
-                            ) : (
-                              <Clock className="w-3 h-3 text-slate-300 shrink-0" />
-                            )}
-                          </div>
-                          <p className="text-[9px] font-medium opacity-60 truncate">
-                            {slot.profiles?.full_name ? (
-                              slot.profiles.full_name.split(' ').map((n, idx, arr) => idx === arr.length - 1 ? n : n[0] + '.').join(' ')
-                            ) : 'No teacher'}
-                          </p>
+                        <div onClick={() => openEdit(slot)} className="h-14 p-2 rounded-xl border bg-white border-slate-200 cursor-pointer shadow-sm flex flex-col justify-center">
+                          <p className="text-[10px] font-black uppercase tracking-tight truncate leading-tight">{slot.subjects?.name}</p>
+                          <p className="text-[9px] font-medium opacity-60 truncate">Teacher</p>
                         </div>
                       </td>
                     );
@@ -714,7 +617,7 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
 
   const handleAddTeacher = async (e) => {
     e.preventDefault();
-    alert("In this environment, new users must sign up via the Login screen first to create secure authentication credentials. Once they sign up, they will appear in the 'Pending Approval' list above.");
+    alert("In this environment, new users must sign up via the Login screen first to create secure authentication credentials.");
     setShowAddModal(false);
   };
 
@@ -725,7 +628,7 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
   };
 
   const handleRejectTeacher = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this pending request?")) return;
+    if (!window.confirm("Are you sure?")) return;
     const { error } = await supabase.from('profiles').delete().eq('id', id);
     if (error) alert(error.message);
     else if (refreshData) refreshData();
@@ -734,53 +637,27 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
   const pendingTeachers = teachers?.filter(t => t.role === 'pending') || [];
   const activeTeachers = teachers?.filter(t => t.role !== 'pending') || [];
 
-  const filteredTeachers = activeTeachers?.filter(t => {
-    if (filter === 'All') return true;
-    const att = attendance?.find(a => a.teacher_id === t.id);
-    if (filter === 'Present') return !!att;
-    if (filter === 'Absent') return !att;
-    return true;
-  });
-
   return (
   <div className="space-y-6 animate-in fade-in duration-300">
-    <div className="flex justify-between items-start">
+    <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Teachers</h1>
-        <p className="text-sm text-slate-500 mt-1">Manage teacher accounts and monitor attendance</p>
+        <p className="text-sm text-slate-500 mt-1">Manage teacher accounts</p>
       </div>
-      <div className="flex gap-2">
-        <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition">
+      <button onClick={() => setShowAddModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition">
           Invite Guide
-        </button>
-      </div>
+      </button>
     </div>
 
     {pendingTeachers.length > 0 && (
-      <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden animate-in slide-in-from-top-4 duration-500">
-        <div className="p-4 bg-amber-100/50 border-b border-amber-200 flex items-center gap-2">
-          <Clock className="w-5 h-5 text-amber-600" />
-          <h2 className="font-bold text-amber-900">Pending Approvals ({pendingTeachers.length})</h2>
-        </div>
+      <div className="bg-amber-50 border border-amber-200 rounded-xl overflow-hidden">
+        <div className="p-4 bg-amber-100/50 border-b border-amber-200 font-bold text-amber-900">Pending Approvals ({pendingTeachers.length})</div>
         <div className="divide-y divide-amber-200/50">
           {pendingTeachers.map(t => (
             <div key={t.id} className="p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white border border-amber-200 flex items-center justify-center font-bold text-amber-700">
-                  {t.full_name?.substring(0,2).toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-bold text-amber-900">{t.full_name}</p>
-                  <p className="text-xs text-amber-700">{t.email}</p>
-                </div>
-              </div>
+              <p className="font-medium text-amber-900">{t.full_name}</p>
               <div className="flex gap-2">
-                <button onClick={() => handleRejectTeacher(t.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-                <button onClick={() => handleApproveTeacher(t.id)} className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
-                  <Check className="w-4 h-4" /> Approve
-                </button>
+                <button onClick={() => handleApproveTeacher(t.id)} className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-bold">Approve</button>
               </div>
             </div>
           ))}
@@ -788,47 +665,6 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
       </div>
     )}
 
-    {showAddModal && (
-      <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-bold text-lg text-slate-900">Invite New Teacher</h3>
-            <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
-          </div>
-          <form onSubmit={handleAddTeacher} className="p-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-              <input type="text" required value={newName} onChange={e => setNewName(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" placeholder="e.g. Jane Doe" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-              <input type="email" required value={newEmail} onChange={e => setNewEmail(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-lg bg-slate-50 text-slate-900" placeholder="jane@school.edu" />
-            </div>
-            <div className="pt-2">
-              <button type="submit" className="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold shadow-sm">Send Invite Link</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
-
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="bg-white p-5 rounded-xl border border-slate-200 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-slate-900">{teachers ? teachers.length : 0}</p>
-        <p className="text-sm font-medium text-slate-500">Total</p>
-      </div>
-      <div className="bg-emerald-50 p-5 rounded-xl border border-emerald-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-emerald-600">{attendance ? attendance.length : 0}</p>
-        <p className="text-sm font-medium text-emerald-700">Present</p>
-      </div>
-      <div className="bg-red-50 p-5 rounded-xl border border-red-100 flex flex-col justify-center">
-        <p className="text-3xl font-bold text-red-600">{teachers && attendance ? Math.max(0, teachers.length - attendance.length) : 0}</p>
-        <p className="text-sm font-medium text-red-700">Absent</p>
-      </div>
-    </div>
-
-    <div className="flex flex-col md:flex-row gap-4 items-center">
-      <div className="relative flex-1 w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" placeholder="Search teachers..." className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white" />
       </div>

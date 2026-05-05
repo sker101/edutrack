@@ -27,6 +27,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function AdminDashboard({ profile }) {
   const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Data State
   const [teachers, setTeachers] = useState([]);
@@ -245,8 +246,8 @@ export default function AdminDashboard({ profile }) {
       </div>
 
       {/* Top Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <p className="text-slate-500 text-sm font-medium">Total<br/>Teachers</p>
             <div className="p-2 bg-slate-50 rounded-lg"><Users className="w-4 h-4 text-slate-400" /></div>
@@ -288,7 +289,7 @@ export default function AdminDashboard({ profile }) {
             <div className="p-2 bg-teal-50 rounded-lg"><BookOpen className="w-4 h-4 text-teal-600" /></div>
           </div>
           <p className="text-3xl font-bold text-slate-900">{verifications.length}</p>
-          <p className="text-xs text-slate-500 mt-1">Out of 168</p>
+          <p className="text-xs text-slate-500 mt-1">Out of {todaysSchedule.length}</p>
         </div>
 
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative">
@@ -684,18 +685,38 @@ export default function AdminDashboard({ profile }) {
   );
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-800 font-sans">
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-800 font-sans relative">
+      
+      {/* Mobile Backdrop */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-full z-10">
+      <div className={`
+        fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-full z-50 transition-transform duration-300 lg:relative lg:translate-x-0
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         <div>
-          <div className="p-6 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
-              <GraduationCap className="w-5 h-5" />
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="font-bold text-slate-900 leading-tight text-sm sm:text-base">EduTrack</h1>
+                <p className="text-[10px] sm:text-xs text-slate-500">Tanzania Schools</p>
+              </div>
             </div>
-            <div>
-              <h1 className="font-bold text-slate-900 leading-tight">EduTrack</h1>
-              <p className="text-xs text-slate-500">Tanzania Schools</p>
-            </div>
+            <button 
+              className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <UserX className="w-5 h-5" />
+            </button>
           </div>
           
           <nav className="px-4 py-2 space-y-1">
@@ -713,7 +734,10 @@ export default function AdminDashboard({ profile }) {
             .map(item => (
               <button
                 key={item.name}
-                onClick={() => setActiveMenu(item.name)}
+                onClick={() => {
+                  setActiveMenu(item.name);
+                  setIsMobileMenuOpen(false);
+                }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeMenu === item.name
                     ? 'bg-teal-700 text-white shadow-sm'
@@ -744,8 +768,26 @@ export default function AdminDashboard({ profile }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Mobile Header */}
+        <header className="lg:hidden h-16 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <span className="font-bold text-slate-900">{activeMenu}</span>
+          </div>
+          <button 
+            className="p-2 -mr-2 text-slate-500"
+            onClick={() => setIsMobileMenuOpen(true)}
+          >
+            <Layers className="w-6 h-6" />
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto bg-slate-50/30">
+          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
           {activeMenu === 'Dashboard' && renderDashboard()}
           {activeMenu === 'Timetable' && <TimetableView />}
           {activeMenu === 'Setup' && renderSetup()}
