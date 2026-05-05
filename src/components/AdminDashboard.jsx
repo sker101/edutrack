@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import {
   GraduationCap, LayoutDashboard, UserCheck, Users, Calendar,
   ClipboardList, AlertTriangle, FileText, CheckCircle2,
-  BookOpen, TrendingUp, Clock, Book, TrendingDown, Minus, UserX, FileQuestion, PlusCircle, Layers, Trash2
+  BookOpen, TrendingUp, Clock, Book, TrendingDown, Minus, UserX, FileQuestion, PlusCircle, Layers, Trash2, RefreshCcw
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertsView, CheckInView, LessonsView, TimetableView, TeachersView } from './AdminViews';
@@ -760,9 +760,18 @@ export default function AdminDashboard({ profile }) {
               <p className="text-sm font-semibold text-slate-900 truncate">{profile?.full_name || 'User'}</p>
               <p className="text-xs text-slate-500 truncate capitalize">{profile?.role ? profile.role.replace('_', ' ') : 'Role'}</p>
             </div>
-            <button onClick={() => supabase.auth.signOut()} className="text-slate-400 hover:text-red-500 transition-colors">
-              <UserX className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col gap-1">
+              <button 
+                onClick={() => window.location.reload()} 
+                title="Refresh for updates"
+                className="p-1.5 text-slate-400 hover:text-teal-600 transition-colors"
+              >
+                <RefreshCcw className="w-4 h-4" />
+              </button>
+              <button onClick={() => supabase.auth.signOut()} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                <UserX className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

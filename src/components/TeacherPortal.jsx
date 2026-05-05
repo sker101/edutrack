@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import {
   GraduationCap, UserCheck, BookOpen, Clock, CheckCircle2,
-  MapPin, Calendar, LogOut, ChevronRight, AlertCircle, Fingerprint, Scan, TrendingUp, Award
+  MapPin, Calendar, LogOut, ChevronRight, AlertCircle, Fingerprint, Scan, TrendingUp, Award, RefreshCcw
 } from 'lucide-react'
 
 export default function TeacherPortal({ profile, session }) {
@@ -154,12 +154,21 @@ export default function TeacherPortal({ profile, session }) {
               <p className="text-teal-200 text-xs capitalize">{profile.role || 'Teacher'} · {dayNames[dayOfWeek]}</p>
             </div>
           </div>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
+              title="Refresh App"
+            >
+              <RefreshCcw className="w-5 h-5 text-teal-100" />
+            </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Status strip */}
