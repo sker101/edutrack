@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertsView, CheckInView, LessonsView, TimetableView, TeachersView } from './AdminViews';
+import Logo from './Logo';
 
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -26,8 +27,12 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function AdminDashboard({ profile }) {
-  const [activeMenu, setActiveMenu] = useState('Dashboard');
+  const [activeMenu, setActiveMenu] = useState(() => localStorage.getItem('adminActiveMenu') || 'Dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('adminActiveMenu', activeMenu);
+  }, [activeMenu]);
   
   // Data State
   const [teachers, setTeachers] = useState([]);
@@ -789,12 +794,7 @@ export default function AdminDashboard({ profile }) {
           {/* Drawer Content */}
           <div className="absolute inset-y-0 left-0 w-72 bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
             <div className="p-6 flex items-center justify-between border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
-                  <GraduationCap className="w-5 h-5" />
-                </div>
-                <h1 className="font-bold text-slate-900">EduTrack</h1>
-              </div>
+              <Logo size="md" />
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
@@ -849,14 +849,8 @@ export default function AdminDashboard({ profile }) {
       {/* Desktop Sidebar (Permanent) */}
       <div className="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col justify-between h-full shrink-0">
         <div>
-          <div className="p-6 flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="font-bold text-slate-900 leading-tight">EduTrack</h1>
-              <p className="text-xs text-slate-500">Tanzania Schools</p>
-            </div>
+          <div className="p-6">
+            <Logo size="md" />
           </div>
           
           <nav className="px-4 py-2 space-y-1">

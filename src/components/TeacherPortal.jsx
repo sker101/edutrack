@@ -4,10 +4,15 @@ import {
   GraduationCap, UserCheck, BookOpen, Clock, CheckCircle2,
   MapPin, Calendar, LogOut, ChevronRight, AlertCircle, Fingerprint, Scan, TrendingUp, Award, RefreshCcw
 } from 'lucide-react'
+import Logo from './Logo'
 
 export default function TeacherPortal({ profile, session }) {
-  const [activeTab, setActiveTab] = useState('home')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('teacherActiveTab') || 'home')
   const [lessons, setLessons] = useState([])
+
+  useEffect(() => {
+    localStorage.setItem('teacherActiveTab', activeTab)
+  }, [activeTab])
   const [verifications, setVerifications] = useState([])
   const [attendance, setAttendance] = useState([])
   const [checkingIn, setCheckingIn] = useState(false)
@@ -194,11 +199,8 @@ export default function TeacherPortal({ profile, session }) {
       
       {/* Desktop Sidebar Navigation */}
       <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col fixed inset-y-0 left-0 z-10 shadow-sm">
-        <div className="p-6 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
-            <GraduationCap className="w-5 h-5" />
-          </div>
-          <h1 className="font-bold text-slate-900 tracking-tight">EduTrack</h1>
+        <div className="p-6">
+          <Logo size="md" />
         </div>
         
         <nav className="flex-1 px-4 space-y-1 mt-4">

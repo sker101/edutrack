@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
 import AdminDashboard from './components/AdminDashboard'
 import TeacherPortal from './components/TeacherPortal'
-import { GraduationCap, Mail, User, ArrowRight, Loader2, Lock, Eye, EyeOff, KeyRound, Clock } from 'lucide-react'
+import Logo from './components/Logo'
+import { Mail, User, ArrowRight, Loader2, Lock, Eye, EyeOff, KeyRound, Clock } from 'lucide-react'
 
 function App() {
   const [session, setSession] = useState(null)
@@ -35,14 +36,12 @@ function App() {
   if (appLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gradient-to-br from-teal-50 to-slate-100">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-teal-600 flex items-center justify-center shadow-lg">
-            <GraduationCap className="w-7 h-7 text-white" />
-          </div>
-          <p className="text-slate-500 font-medium animate-pulse">Loading EduTrack...</p>
+        <div className="flex flex-col items-center gap-6">
+          <Logo size="lg" />
+          <p className="text-slate-500 font-black text-xs uppercase tracking-widest animate-pulse">Initializing System...</p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!session) return <Login />
@@ -128,11 +127,8 @@ function Login() {
       <div className={gridBg} />
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-2xl shadow-teal-900/50 mb-4">
-            <GraduationCap className="w-9 h-9 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">EduTrack</h1>
-          <p className="text-teal-300 text-sm mt-1 font-medium">Tanzania Schools Management</p>
+          <Logo size="lg" light />
+          <p className="text-teal-300 text-xs mt-3 font-black uppercase tracking-[0.2em]">Tanzania Schools Management</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl">
