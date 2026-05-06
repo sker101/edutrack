@@ -17,6 +17,7 @@ export default function TeacherPortal({ profile, session }) {
   const [attendance, setAttendance] = useState([])
   const [checkingIn, setCheckingIn] = useState(false)
   const [checkInDone, setCheckInDone] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [biometricMethod, setBiometricMethod] = useState('')
   const [showRecordModal, setShowRecordModal] = useState(null)
   const [topicTaught, setTopicTaught] = useState('')
@@ -59,6 +60,7 @@ export default function TeacherPortal({ profile, session }) {
       setAttendance(att)
       setCheckInDone(true)
     }
+    setIsLoading(false)
   }
 
   const handleCheckIn = async (method) => {
@@ -308,7 +310,7 @@ export default function TeacherPortal({ profile, session }) {
           {activeTab === 'home' && (
             <>
               {/* Critical Alert for Check-In */}
-              {!checkInDone && (
+              {!isLoading && !checkInDone && (
                 <div className="bg-gradient-to-br from-orange-600 to-rose-600 rounded-3xl p-6 text-white shadow-xl shadow-orange-200 ring-4 ring-white relative overflow-hidden group">
                   <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-125 transition-transform duration-700" />
                   <div className="relative z-10">
