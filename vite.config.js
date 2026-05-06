@@ -9,7 +9,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.png', 'apple-touch-icon.png', 'masked-icon.svg'],
       workbox: {
         cleanupOutdatedCaches: true,
         skipWaiting: true,
