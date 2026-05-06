@@ -685,38 +685,88 @@ export default function AdminDashboard({ profile }) {
   );
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-800 font-sans relative">
+    <div className="flex h-screen bg-[#F8FAFC] overflow-hidden text-slate-800 font-sans">
       
-      {/* Mobile Backdrop */}
+      {/* Mobile Drawer (Overlay) */}
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div className={`
-        fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col justify-between h-full z-50 transition-transform duration-300 lg:relative lg:translate-x-0
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        <div>
-          <div className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
-                <GraduationCap className="w-5 h-5" />
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Drawer Content */}
+          <div className="absolute inset-y-0 left-0 w-72 bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+            <div className="p-6 flex items-center justify-between border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <h1 className="font-bold text-slate-900">EduTrack</h1>
               </div>
-              <div>
-                <h1 className="font-bold text-slate-900 leading-tight text-sm sm:text-base">EduTrack</h1>
-                <p className="text-[10px] sm:text-xs text-slate-500">Tanzania Schools</p>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+              {[
+                { name: 'Dashboard', icon: LayoutDashboard },
+                { name: 'Check-In', icon: UserCheck },
+                { name: 'Teachers', icon: Users, adminOnly: true },
+                { name: 'Timetable', icon: Calendar },
+                { name: 'Lessons', icon: ClipboardList },
+                { name: 'Alerts', icon: AlertTriangle, adminOnly: true },
+                { name: 'Reports', icon: FileText, adminOnly: true },
+                { name: 'Setup', icon: Layers, adminOnly: true },
+              ]
+              .filter(item => !(profile?.role === 'teacher' && item.adminOnly))
+              .map(item => (
+                <button
+                  key={item.name}
+                  onClick={() => {
+                    setActiveMenu(item.name);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
+                    activeMenu === item.name
+                      ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <item.icon className={`w-5 h-5 ${activeMenu === item.name ? 'text-teal-100' : 'text-slate-400'}`} />
+                  {item.name}
+                </button>
+              ))}
+            </nav>
+
+            <div className="p-4 border-t border-slate-100">
+              <div className="flex items-center gap-3 px-2 py-3 bg-slate-50 rounded-xl">
+                <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm border border-teal-200 uppercase shrink-0">
+                  {profile?.full_name ? profile.full_name.substring(0, 2) : 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-900 truncate">{profile?.full_name || 'User'}</p>
+                  <p className="text-[10px] text-slate-500 truncate capitalize tracking-wider font-semibold">ADMINISTRATOR</p>
+                </div>
               </div>
             </div>
-            <button 
-              className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <UserX className="w-5 h-5" />
-            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar (Permanent) */}
+      <div className="hidden lg:flex w-64 bg-white border-r border-slate-200 flex-col justify-between h-full shrink-0">
+        <div>
+          <div className="p-6 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-sm">
+              <GraduationCap className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="font-bold text-slate-900 leading-tight">EduTrack</h1>
+              <p className="text-xs text-slate-500">Tanzania Schools</p>
+            </div>
           </div>
           
           <nav className="px-4 py-2 space-y-1">
@@ -734,10 +784,7 @@ export default function AdminDashboard({ profile }) {
             .map(item => (
               <button
                 key={item.name}
-                onClick={() => {
-                  setActiveMenu(item.name);
-                  setIsMobileMenuOpen(false);
-                }}
+                onClick={() => setActiveMenu(item.name)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                   activeMenu === item.name
                     ? 'bg-teal-700 text-white shadow-sm'
@@ -761,54 +808,52 @@ export default function AdminDashboard({ profile }) {
               <p className="text-xs text-slate-500 truncate capitalize">{profile?.role ? profile.role.replace('_', ' ') : 'Role'}</p>
             </div>
             <div className="flex flex-col gap-1">
-              <button 
-                onClick={() => window.location.reload()} 
-                title="Refresh for updates"
-                className="p-1.5 text-slate-400 hover:text-teal-600 transition-colors"
-              >
-                <RefreshCcw className="w-4 h-4" />
-              </button>
-              <button onClick={() => supabase.auth.signOut()} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                <UserX className="w-4 h-4" />
-              </button>
+              <button onClick={() => window.location.reload()} className="p-1.5 text-slate-400 hover:text-teal-600 transition-colors"><RefreshCcw className="w-4 h-4" /></button>
+              <button onClick={() => supabase.auth.signOut()} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"><UserX className="w-4 h-4" /></button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
         
         {/* Mobile Header */}
         <header className="lg:hidden h-16 bg-white border-b border-slate-200 px-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white">
-              <GraduationCap className="w-5 h-5" />
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 -ml-2 text-slate-600 hover:bg-slate-50 rounded-lg transition"
+            >
+              <Layers className="w-6 h-6" />
+            </button>
+            <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center text-white">
+              <GraduationCap className="w-4 h-4" />
             </div>
-            <span className="font-bold text-slate-900">{activeMenu}</span>
+            <span className="font-bold text-slate-900 text-sm">{activeMenu}</span>
           </div>
-          <button 
-            className="p-2 -mr-2 text-slate-500"
-            onClick={() => setIsMobileMenuOpen(true)}
-          >
-            <Layers className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-1">
+             <button onClick={() => window.location.reload()} className="p-2 text-slate-400 hover:text-teal-600"><RefreshCcw className="w-4 h-4" /></button>
+             <button onClick={() => supabase.auth.signOut()} className="p-2 text-slate-400 hover:text-red-500"><UserX className="w-4 h-4" /></button>
+          </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto bg-slate-50/30">
-          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          {activeMenu === 'Dashboard' && renderDashboard()}
-          {activeMenu === 'Timetable' && <TimetableView />}
-          {activeMenu === 'Setup' && renderSetup()}
-          {activeMenu === 'Check-In' && <CheckInView attendance={attendance} profile={profile} refreshData={fetchData} />}
-          {activeMenu === 'Lessons' && <LessonsView verifications={verifications} teachers={teachers} profile={profile} refreshData={fetchData} />}
-          {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
-          {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} refreshData={fetchData} />}
-          {activeMenu === 'Reports' && (
-            <div className="flex items-center justify-center h-[50vh] text-slate-500">
-              <p>Reports section is under construction.</p>
-            </div>
-          )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto bg-slate-50/50">
+          <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+            {activeMenu === 'Dashboard' && renderDashboard()}
+            {activeMenu === 'Timetable' && <TimetableView />}
+            {activeMenu === 'Setup' && renderSetup()}
+            {activeMenu === 'Check-In' && <CheckInView attendance={attendance} profile={profile} refreshData={fetchData} />}
+            {activeMenu === 'Lessons' && <LessonsView verifications={verifications} teachers={teachers} profile={profile} refreshData={fetchData} />}
+            {activeMenu === 'Alerts' && <AlertsView alerts={[]} />}
+            {activeMenu === 'Teachers' && <TeachersView teachers={teachers} attendance={attendance} refreshData={fetchData} />}
+            {activeMenu === 'Reports' && (
+              <div className="flex items-center justify-center h-[50vh] text-slate-500">
+                <p>Reports section is under construction.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
