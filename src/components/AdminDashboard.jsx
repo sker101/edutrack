@@ -166,6 +166,11 @@ export default function AdminDashboard({ profile }) {
       });
     });
     setRecentActivity(activity);
+
+    // Chart Data
+    setChartData([
+      { name: 'Today', present: attendanceData?.length || 0, late: 0, absent: (profilesData?.length || 0) - (attendanceData?.length || 0) }
+    ]);
   }
 
   const handleSaveSettings = async (e) => {
@@ -181,12 +186,6 @@ export default function AdminDashboard({ profile }) {
     if (error) alert("Error saving settings: " + error.message + "\n\nMake sure you have created the 'school_settings' table first!");
     else alert("School Geofence settings saved successfully!");
   };
-
-    // Chart Data
-    setChartData([
-      { name: 'Today', present: attendanceData?.length || 0, late: 0, absent: (profilesData?.length || 0) - (attendanceData?.length || 0) }
-    ]);
-  }
 
   const handleAssignTimetable = async (e) => {
     e.preventDefault();
