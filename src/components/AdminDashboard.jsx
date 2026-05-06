@@ -52,6 +52,11 @@ export default function AdminDashboard({ profile }) {
   // Setup Form State
   const [newClassName, setNewClassName] = useState('');
   const [newSubjectName, setNewSubjectName] = useState('');
+  const [schoolSettings, setSchoolSettings] = useState({
+    lat: -6.7924, // Default Dar es Salaam
+    lng: 39.2083,
+    radius: 500 // Default 500m
+  });
 
   // Create Teacher State
   const [newTeacherEmail, setNewTeacherEmail] = useState('');
@@ -62,7 +67,19 @@ export default function AdminDashboard({ profile }) {
 
   useEffect(() => {
     fetchData();
+    fetchSchoolSettings();
   }, []);
+
+  const fetchSchoolSettings = async () => {
+    const { data, error } = await supabase.from('school_settings').select('*').single();
+    if (data) {
+      setSchoolSettings({
+        lat: data.latitude,
+        lng: data.longitude,
+        radius: data.radius_meters
+      });
+    }
+  };
 
   async function fetchData() {
     const { data: profilesData } = await supabase.from('profiles').select('*').order('full_name');
@@ -143,12 +160,27 @@ export default function AdminDashboard({ profile }) {
         title: v.profiles?.full_name,
         desc: `Completed ${v.timetables?.subjects?.name} - ${v.timetables?.classes?.name}`,
         time: new Date(v.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        icon: Book,
-        color: 'text-teal-600',
+        icon: CheckCircle2,
+        color: 'text-teal-500',
         bg: 'bg-teal-50'
       });
     });
-    setRecentActivity(activity.sort((a,b) => b.time.localeCompare(a.time)).slice(0, 5));
+    setRecentActivity(activity);
+  }
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.from('school_settings').upsert({
+      id: 1, // Single record for the whole school
+      latitude: schoolSettings.lat,
+      longitude: schoolSettings.lng,
+      radius_meters: schoolSettings.radius
+    });
+    setLoading(false);
+    if (error) alert("Error saving settings: " + error.message + "\n\nMake sure you have created the 'school_settings' table first!");
+    else alert("School Geofence settings saved successfully!");
+  };
 
     // Chart Data
     setChartData([
@@ -614,6 +646,65 @@ export default function AdminDashboard({ profile }) {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900">
+          <MapPin className="w-6 h-6 text-rose-600" /> Geofence Configuration
+        </h2>
+        <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl mb-6">
+          <p className="text-xs text-rose-800 font-bold mb-1 uppercase tracking-wider">Required Database Table</p>
+          <p className="text-[11px] text-rose-700 leading-relaxed mb-2">
+            To enforce location-based attendance, run this SQL in your Supabase SQL Editor:
+          </p>
+          <pre className="bg-white p-2 rounded border border-rose-200 text-[10px] text-slate-700 overflow-x-auto">
+            {`CREATE TABLE school_settings (
+  id int PRIMARY KEY DEFAULT 1,
+  latitude float8 NOT NULL,
+  longitude float8 NOT NULL,
+  radius_meters int DEFAULT 500,
+  CONSTRAINT single_row CHECK (id = 1)
+);`}
+          </pre>
+        </div>
+
+        <form onSubmit={handleSaveSettings} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">School Latitude</label>
+              <input 
+                type="number" step="any" required 
+                value={schoolSettings.lat} 
+                onChange={e => setSchoolSettings({...schoolSettings, lat: parseFloat(e.target.value)})}
+                className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" 
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">School Longitude</label>
+              <input 
+                type="number" step="any" required 
+                value={schoolSettings.lng} 
+                onChange={e => setSchoolSettings({...schoolSettings, lng: parseFloat(e.target.value)})}
+                className="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50" 
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5">Allowed Radius (Meters)</label>
+            <div className="flex gap-4 items-center">
+              <input 
+                type="range" min="50" max="2000" step="50"
+                value={schoolSettings.radius} 
+                onChange={e => setSchoolSettings({...schoolSettings, radius: parseInt(e.target.value)})}
+                className="flex-1 accent-rose-600" 
+              />
+              <span className="text-sm font-black text-slate-700 w-16">{schoolSettings.radius}m</span>
+            </div>
+          </div>
+          <button type="submit" disabled={loading} className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-lg shadow-rose-100 transition-all active:scale-[0.98]">
+            Save Geofence Settings
+          </button>
+        </form>
       </div>
 
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">

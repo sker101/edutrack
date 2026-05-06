@@ -12,8 +12,11 @@ export default function TeacherPortal({ profile, session }) {
   const [attendance, setAttendance] = useState([])
   const [checkingIn, setCheckingIn] = useState(false)
   const [checkInDone, setCheckInDone] = useState(false)
-  const [recordingLesson, setRecordingLesson] = useState(null)
   const [biometricMethod, setBiometricMethod] = useState('')
+  const [showRecordModal, setShowRecordModal] = useState(null)
+  const [topicTaught, setTopicTaught] = useState('')
+  const [lessonPlan, setLessonPlan] = useState('')
+  const [isCapturing, setIsCapturing] = useState(false)
 
   const today = new Date().toISOString().split('T')[0]
   const dayOfWeek = new Date().getDay() === 0 ? 7 : new Date().getDay()
@@ -57,6 +60,9 @@ export default function TeacherPortal({ profile, session }) {
     setBiometricMethod(method)
     setCheckingIn(true)
 
+    // 1. Fetch School Geofence
+    const { data: school } = await supabase.from('school_settings').select('*').single()
+    
     if (!navigator.geolocation) {
       alert('Geolocation not supported.')
       setCheckingIn(false)
@@ -65,6 +71,17 @@ export default function TeacherPortal({ profile, session }) {
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords
+      
+      // 2. Geofence Check
+      if (school) {
+        const dist = getDistance(latitude, longitude, school.latitude, school.longitude)
+        if (dist > school.radius_meters) {
+          alert(`Verification Failed: You are ${Math.round(dist)}m away from school. You must be within ${school.radius_meters}m to check in.`);
+          setCheckingIn(false)
+          return
+        }
+      }
+
       const { error } = await supabase.from('attendance_logs').insert([{
         teacher_id: session.user.id,
         date: today,
@@ -82,29 +99,64 @@ export default function TeacherPortal({ profile, session }) {
     })
   }
 
-  const handleRecordLesson = async (timetableId) => {
-    setRecordingLesson(timetableId)
-    if (!navigator.geolocation) {
-      alert('Geolocation not supported.')
-      setRecordingLesson(null)
-      return
-    }
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
 
+  const handleStartRecording = (lesson) => {
+    if (!checkInDone) {
+      alert("Please check in for the day first!");
+      setActiveTab('checkin');
+      return;
+    }
+    setShowRecordModal(lesson);
+    setTopicTaught('');
+    setLessonPlan('');
+  }
+
+  const handleFinalRecord = async () => {
+    if (!topicTaught) { alert("Please enter what was taught."); return; }
+    setCheckingIn(true); // Reuse loading state
+    
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const { latitude, longitude } = pos.coords
+      
+      // Geofence check for lesson too
+      const { data: school } = await supabase.from('school_settings').select('*').single()
+      if (school) {
+        const dist = getDistance(latitude, longitude, school.latitude, school.longitude)
+        if (dist > school.radius_meters) {
+          alert(`Action Blocked: You must be at school to record a lesson.`);
+          setCheckingIn(false)
+          return
+        }
+      }
+
       const { error } = await supabase.from('lesson_verifications').insert([{
         teacher_id: session.user.id,
-        timetable_id: timetableId,
+        timetable_id: showRecordModal.id,
         date: today,
         location_lat: latitude,
         location_lng: longitude,
+        topic_taught: topicTaught,
+        lesson_plan: lessonPlan,
+        proof_photo: "simulated_capture_" + Date.now() // In a real app, this would be a file upload
       }])
-      setRecordingLesson(null)
+      
+      setCheckingIn(false)
       if (error) { alert('Error: ' + error.message); return }
+      setShowRecordModal(null)
       fetchAll()
     }, () => {
       alert('Could not get your location.')
-      setRecordingLesson(null)
+      setCheckingIn(false)
     })
   }
 
@@ -403,19 +455,14 @@ export default function TeacherPortal({ profile, session }) {
                               </div>
                             ) : (
                               <button
-                                onClick={() => handleRecordLesson(lesson.id)}
-                                disabled={recordingLesson === lesson.id}
+                                onClick={() => handleStartRecording(lesson)}
                                 className={`w-full sm:w-auto px-6 py-2.5 rounded-2xl text-xs font-black tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${
                                   isOngoing 
                                     ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-teal-200' 
                                     : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shadow-none'
                                 }`}
                               >
-                                {recordingLesson === lesson.id ? (
-                                  <><Clock className="w-4 h-4 animate-spin" /> LOGGING...</>
-                                ) : (
-                                  <><MapPin className="w-4 h-4" /> START RECORDING</>
-                                )}
+                                <MapPin className="w-4 h-4" /> START RECORDING
                               </button>
                             )}
                           </div>
@@ -520,6 +567,78 @@ export default function TeacherPortal({ profile, session }) {
           </div>
         </nav>
       </div>
+
+      {/* Recording Modal */}
+      {showRecordModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-teal-700 p-6 text-white">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-xl font-black uppercase tracking-tight">Record Lesson</h3>
+                  <p className="text-teal-100 text-xs font-bold uppercase tracking-widest mt-1">
+                    {showRecordModal.subjects?.name} · {showRecordModal.classes?.name}
+                  </p>
+                </div>
+                <button onClick={() => setShowRecordModal(null)} className="p-2 hover:bg-white/10 rounded-xl transition">
+                  <ChevronRight className="w-6 h-6 rotate-90" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Proof of Session</label>
+                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center group hover:border-teal-300 transition-colors cursor-pointer overflow-hidden relative">
+                  {isCapturing ? (
+                    <div className="space-y-3">
+                       <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                         <Scan className="w-6 h-6 text-teal-600" />
+                       </div>
+                       <p className="text-xs font-bold text-teal-700 uppercase tracking-widest">Opening Camera...</p>
+                    </div>
+                  ) : (
+                    <div onClick={() => { setIsCapturing(true); setTimeout(() => setIsCapturing(false), 2000); }}>
+                      <Scan className="w-10 h-10 text-slate-300 mx-auto mb-2 group-hover:text-teal-400 transition-colors" />
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tap to Take Class Photo</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Topic Taught</label>
+                  <textarea 
+                    value={topicTaught} 
+                    onChange={e => setTopicTaught(e.target.value)}
+                    placeholder="Describe the lesson content..."
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none min-h-[80px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Lesson Plan (Optional)</label>
+                  <input 
+                    type="text"
+                    value={lessonPlan} 
+                    onChange={e => setLessonPlan(e.target.value)}
+                    placeholder="Link to lesson plan or short note..."
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={handleFinalRecord}
+                disabled={checkingIn}
+                className="w-full py-4 bg-teal-600 hover:bg-teal-700 disabled:bg-slate-200 text-white rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-teal-100 transition-all active:scale-[0.98]"
+              >
+                {checkingIn ? 'SYNCING DATA...' : 'VERIFY & SUBMIT'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
