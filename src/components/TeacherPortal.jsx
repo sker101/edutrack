@@ -523,5 +523,3 @@ export default function TeacherPortal({ profile, session }) {
     </div>
   )
 }
-  )
-}
