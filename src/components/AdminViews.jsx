@@ -689,8 +689,12 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
       </div>
     </div>
 
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-      <table className="w-full text-left border-collapse">
+    <div className="flex items-center gap-2 text-xs text-slate-400 lg:hidden px-1 mb-2 animate-pulse">
+      <MoreHorizontal className="w-4 h-4" />
+      <span>Slide table left/right to see full status</span>
+    </div>
+    <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto shadow-sm">
+      <table className="w-full text-left border-collapse" style={{ minWidth: '700px' }}>
         <thead>
           <tr className="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
             <th className="p-4">Teacher</th>
