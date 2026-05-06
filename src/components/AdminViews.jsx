@@ -636,6 +636,13 @@ export const TeachersView = ({ teachers, attendance, refreshData }) => {
 
   const pendingTeachers = teachers?.filter(t => t.role === 'pending') || [];
   const activeTeachers = teachers?.filter(t => t.role !== 'pending') || [];
+  const filteredTeachers = activeTeachers?.filter(t => {
+    if (filter === 'All') return true;
+    const att = attendance?.find(a => a.teacher_id === t.id);
+    if (filter === 'Present') return !!att;
+    if (filter === 'Absent') return !att;
+    return true;
+  });
 
   return (
   <div className="space-y-6 animate-in fade-in duration-300">
