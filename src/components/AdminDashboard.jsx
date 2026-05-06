@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 import {
   GraduationCap, LayoutDashboard, UserCheck, Users, Calendar,
   ClipboardList, AlertTriangle, FileText, CheckCircle2,
-  BookOpen, TrendingUp, Clock, Book, TrendingDown, Minus, UserX, FileQuestion, PlusCircle, Layers, Trash2, RefreshCcw
+  BookOpen, TrendingUp, Clock, Book, TrendingDown, Minus, UserX, FileQuestion, PlusCircle, Layers, Trash2, RefreshCcw, X
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertsView, CheckInView, LessonsView, TimetableView, TeachersView } from './AdminViews';
