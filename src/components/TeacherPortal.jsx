@@ -4,7 +4,7 @@ import {
   GraduationCap, UserCheck, BookOpen, Clock, CheckCircle2,
   MapPin, Calendar, LogOut, ChevronRight, AlertCircle, Fingerprint, Scan, TrendingUp, Award, RefreshCcw
 } from 'lucide-react'
-import Logo from './Logo'
+import Logo from './Logo.jsx'
 
 export default function TeacherPortal({ profile, session }) {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('teacherActiveTab') || 'home')

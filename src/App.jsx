@@ -294,11 +294,8 @@ function Onboarding({ session, onComplete }) {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-2xl shadow-teal-900/50 mb-4">
-            <GraduationCap className="w-9 h-9 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">EduTrack</h1>
-          <p className="text-teal-300 text-sm mt-1 font-medium">Welcome! Let's set up your profile</p>
+          <Logo size="lg" light />
+          <p className="text-teal-300 text-sm mt-3 font-medium text-center">Welcome! Let's set up your profile</p>
         </div>
 
         <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 p-8 shadow-2xl">

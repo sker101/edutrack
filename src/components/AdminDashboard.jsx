@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AlertsView, CheckInView, LessonsView, TimetableView, TeachersView } from './AdminViews';
-import Logo from './Logo';
+import Logo from './Logo.jsx';
 
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -911,9 +911,7 @@ export default function AdminDashboard({ profile }) {
             >
               <Layers className="w-6 h-6" />
             </button>
-            <div className="w-7 h-7 rounded-lg bg-teal-600 flex items-center justify-center text-white">
-              <GraduationCap className="w-4 h-4" />
-            </div>
+            <Logo size="sm" />
             <span className="font-bold text-slate-900 text-sm">{activeMenu}</span>
           </div>
           <div className="flex items-center gap-1">
