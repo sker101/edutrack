@@ -33,29 +33,21 @@ export default function TeacherPortal({ profile, session }) {
   }, [])
 
   async function fetchAll() {
-    // Today's timetable
-    const { data: tt } = await supabase
-      .from('timetables')
-      .select('*, classes(name), subjects(name)')
-      .eq('teacher_id', session.user.id)
-      .eq('day_of_week', dayOfWeek)
-      .order('start_time', { ascending: true })
+    const today = new Date().toISOString().split('T')[0]
+    const dayOfWeek = new Date().getDay()
+    
+    const [
+      { data: tt },
+      { data: ver },
+      { data: att }
+    ] = await Promise.all([
+      supabase.from('timetables').select(`*, classes(name), subjects(name), profiles(full_name)`).eq('teacher_id', session.user.id).eq('day_of_week', dayOfWeek),
+      supabase.from('lesson_verifications').select('*').eq('teacher_id', session.user.id).eq('date', today),
+      supabase.from('attendance_logs').select('*').eq('teacher_id', session.user.id).eq('date', today)
+    ])
+
     if (tt) setLessons(tt)
-
-    // Today's verified lessons
-    const { data: vv } = await supabase
-      .from('lesson_verifications')
-      .select('*')
-      .eq('teacher_id', session.user.id)
-      .eq('date', today)
-    if (vv) setVerifications(vv.map(v => v.timetable_id))
-
-    // Today's check-in
-    const { data: att } = await supabase
-      .from('attendance_logs')
-      .select('*')
-      .eq('teacher_id', session.user.id)
-      .eq('date', today)
+    if (ver) setVerifications(ver.map(v => v.timetable_id))
     if (att && att.length > 0) {
       setAttendance(att)
       setCheckInDone(true)

@@ -87,31 +87,24 @@ export default function AdminDashboard({ profile }) {
   };
 
   async function fetchData() {
-    const { data: profilesData } = await supabase.from('profiles').select('*').order('full_name');
-    if (profilesData) setTeachers(profilesData);
+    const [
+      { data: profilesData },
+      { data: cls },
+      { data: sub },
+      { data: attendanceData },
+      { data: verifiedData }
+    ] = await Promise.all([
+      supabase.from('profiles').select('*').order('full_name'),
+      supabase.from('classes').select('*').order('name'),
+      supabase.from('subjects').select('*').order('name'),
+      supabase.from('attendance_logs').select(`*, profiles(full_name)`).eq('date', new Date().toISOString().split('T')[0]).order('check_in_time', { ascending: false }),
+      supabase.from('lesson_verifications').select(`*, profiles(full_name), timetables(start_time, end_time, classes(name), subjects(name))`).eq('date', new Date().toISOString().split('T')[0]).order('created_at', { ascending: false })
+    ]);
 
-    const { data: cls } = await supabase.from('classes').select('*').order('name');
-    const { data: sub } = await supabase.from('subjects').select('*').order('name');
+    if (profilesData) setTeachers(profilesData);
     if (cls) setClasses(cls);
     if (sub) setSubjects(sub);
-
-    const today = new Date().toISOString().split('T')[0];
-    const { data: attendanceData } = await supabase
-      .from('attendance_logs')
-      .select(`*, profiles(full_name)`)
-      .eq('date', today)
-      .order('check_in_time', { ascending: false });
     if (attendanceData) setAttendance(attendanceData);
-
-    const { data: verifiedData } = await supabase
-      .from('lesson_verifications')
-      .select(`
-        *, 
-        profiles(full_name),
-        timetables(start_time, end_time, classes(name), subjects(name))
-      `)
-      .eq('date', today)
-      .order('created_at', { ascending: false });
     if (verifiedData) setVerifications(verifiedData);
 
     // Dynamic Top Teachers

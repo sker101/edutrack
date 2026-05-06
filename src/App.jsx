@@ -12,11 +12,17 @@ function App() {
   const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const initApp = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
       setSession(session)
-      if (session) fetchProfile(session.user.id)
-      else setAppLoading(false)
-    })
+      if (session) {
+        // Fetch profile and other critical data in parallel
+        await fetchProfile(session.user.id)
+      } else {
+        setAppLoading(false)
+      }
+    }
+    initApp()
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setNeedsPasswordReset(true)
